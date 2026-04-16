@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Manga{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>📖 Manga Reading List</h1>
+        <p>Powered by MyAnimeList via Jikan API</p>
+    </div>
+    <form class="search-form" action="/add_manga" method="POST">
+        <input type="text" name="search_query" placeholder="Search manga title…" required>
+        <button type="submit" class="btn btn-dark">+ Add Manga</button>
+    </form>
+</div>
+
+{% if current_manga %}
+<p class="section-title">Currently Reading</p>
+<div class="current-card">
+    {% if current_manga.cover_url %}
+        <img src="{{ current_manga.cover_url }}" alt="Cover">
+    {% else %}
+        <div class="current-card-placeholder">📖</div>
+    {% endif %}
+    <div class="current-card-info">
+        <h3>{{ current_manga.title }}</h3>
+        <p class="sub">
+            {% if current_manga.total_chapters > 0 %}{{ current_manga.total_chapters }} chapters{% else %}Ongoing{% endif %}
+        </p>
+        {% if current_manga.total_chapters > 0 %}
+        <progress value="{{ current_manga.chapters_read }}" max="{{ current_manga.total_chapters }}"></progress>
+        <div class="progress-label">
+            <span>{{ current_manga.chapters_read }} chapters read</span>
+            <span>{{ current_manga.total_chapters }} total</span>
+        </div>
+        {% else %}
+        <p style="font-size:0.85em;color:var(--text-muted);margin:8px 0;">{{ current_manga.chapters_read }} chapters read so far</p>
+        {% endif %}
+        <form class="update-form" action="/update_manga_progress/{{ current_manga.id }}" method="POST">
+            <label style="font-size:0.85em;color:var(--text-muted);">Chapters read</label>
+            <input type="number" name="chapters_read" min="0"
+                   {% if current_manga.total_chapters > 0 %}max="{{ current_manga.total_chapters }}"{% endif %}
+                   value="{{ current_manga.chapters_read }}">
+            <button type="submit" class="btn btn-primary btn-sm">Save</button>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+{% if mangas %}
+<p class="section-title">Up Next ({{ mangas|length }})</p>
+<div class="media-grid">
+    {% for manga in mangas %}
+    <div class="media-card">
+        {% if manga.cover_url %}
+            <img src="{{ manga.cover_url }}" alt="Cover">
+        {% else %}
+            <div class="media-card-placeholder">📖</div>
+        {% endif %}
+        <strong>{{ manga.title }}</strong>
+        <span style="display:block;color:var(--text-muted);font-size:0.9em;">
+            {% if manga.total_chapters > 0 %}{{ manga.total_chapters }} ch{% else %}Ongoing{% endif %}
+        </span>
+        <div class="card-actions">
+            <a href="/set_reading_manga/{{ manga.id }}" class="btn btn-primary btn-sm">Read</a>
+            <a href="/delete_manga/{{ manga.id }}" class="btn btn-danger btn-sm">✕</a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+    <div class="empty-icon">📖</div>
+    <p>Your manga list is empty.<br>Search for a manga above to get started.</p>
+</div>
+{% endif %}
+{% endblock %}

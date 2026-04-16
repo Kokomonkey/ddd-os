@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+{% block title %}Stats{% endblock %}
+
+{% block head %}
+<style>
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: 14px;
+        margin-bottom: 28px;
+    }
+
+    .stat-card {
+        background: var(--card-bg);
+        border-radius: 12px;
+        padding: 20px 16px;
+        text-align: center;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+
+    .stat-number { font-size: 2.4em; font-weight: 800; color: var(--blue); line-height: 1; margin-bottom: 6px; }
+    .stat-label { font-size: 0.75em; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+
+    /* Category bars */
+    .cat-bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 9px; }
+    .cat-bar-label { width: 140px; font-size: 0.82em; color: var(--text); text-align: right; flex-shrink: 0; }
+    .cat-bar-track { flex: 1; background: var(--bg); border-radius: 4px; height: 10px; overflow: hidden; }
+    .cat-bar-fill { height: 100%; background: var(--blue); border-radius: 4px; transition: width 0.5s ease; }
+    .cat-bar-val { font-size: 0.8em; font-weight: 600; width: 44px; color: var(--text-muted); }
+
+    /* Heatmap */
+    .heatmap { display: flex; flex-wrap: wrap; gap: 3px; }
+    .hm-cell {
+        width: 22px;
+        height: 22px;
+        border-radius: 4px;
+        position: relative;
+        cursor: default;
+    }
+
+    .hm-cell[data-intensity="0"] { background: var(--bg); border: 1px solid var(--border); }
+    .hm-cell[data-intensity="1"] { background: #bfdbfe; }
+    .hm-cell[data-intensity="2"] { background: #60a5fa; }
+    .hm-cell[data-intensity="3"] { background: #2563eb; }
+    .hm-cell[data-intensity="4"] { background: #1e3a8a; }
+
+    .hm-cell:hover::after {
+        content: attr(data-label);
+        position: absolute;
+        bottom: 28px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0,0,0,0.78);
+        color: white;
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-size: 0.68em;
+        white-space: nowrap;
+        pointer-events: none;
+        z-index: 20;
+    }
+
+    .heatmap-legend {
+        display: flex;
+        gap: 5px;
+        align-items: center;
+        margin-top: 10px;
+        font-size: 0.75em;
+        color: var(--text-muted);
+    }
+
+    .hm-legend-cell { width: 14px; height: 14px; border-radius: 3px; }
+
+    /* Habit streaks */
+    .streak-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 11px 0;
+        border-bottom: 1px solid var(--border);
+    }
+    .streak-row:last-child { border-bottom: none; }
+    .streak-icon { font-size: 1.4em; flex-shrink: 0; }
+    .streak-name { flex: 1; font-weight: 600; font-size: 0.9em; }
+    .streak-val { font-size: 0.85em; font-weight: 700; color: var(--orange); }
+    .streak-none { font-size: 0.8em; color: var(--text-muted); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>📊 Stats</h1>
+        <p>Your activity at a glance</p>
+    </div>
+</div>
+
+<!-- Library overview -->
+<p class="section-title">Library</p>
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-number">{{ books_total }}</div>
+        <div class="stat-label">📚 Books</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">{{ manga_total }}</div>
+        <div class="stat-label">📖 Manga</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">{{ anime_total }}</div>
+        <div class="stat-label">🎬 Anime</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">{{ total_skill_hours }}</div>
+        <div class="stat-label">⏱ Skill Hours</div>
+    </div>
+</div>
+
+<!-- Skill hours by category -->
+<p class="section-title">Skill Hours by Category</p>
+<div class="card" style="margin-bottom:28px;">
+    {% if category_hours %}
+        {% set max_hrs = category_hours.values() | max %}
+        {% for cat, hrs in category_hours.items() %}
+        <div class="cat-bar-row">
+            <div class="cat-bar-label">{{ cat }}</div>
+            <div class="cat-bar-track">
+                <div class="cat-bar-fill"
+                     style="width:{{ ((hrs / max_hrs) * 100) if max_hrs > 0 else 0 }}%;"></div>
+            </div>
+            <div class="cat-bar-val">{{ hrs }}h</div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <p style="color:var(--text-muted);font-size:0.9em;">No skill sessions logged yet.</p>
+    {% endif %}
+    {% if top_skill %}
+    <p style="font-size:0.82em;color:var(--text-muted);margin-top:14px;padding-top:12px;border-top:1px solid var(--border);">
+        ⭐ Most practiced: <strong>{{ top_skill.name }}</strong>
+        ({{ top_skill.total_minutes // 60 }}h {{ top_skill.total_minutes % 60 }}m)
+    </p>
+    {% endif %}
+</div>
+
+<!-- 30-day activity heatmap -->
+<p class="section-title">Skill Activity — Last 30 Days</p>
+<div class="card" style="margin-bottom:28px;">
+    <div class="heatmap">
+        {% for cell in heatmap %}
+        <div class="hm-cell"
+             data-intensity="{{ cell.intensity }}"
+             data-label="{{ cell.date.strftime('%b %d') }}{% if cell.mins > 0 %} · {{ cell.mins }} min{% endif %}">
+        </div>
+        {% endfor %}
+    </div>
+    <div class="heatmap-legend">
+        Less
+        <div class="hm-legend-cell" data-intensity="0"
+             style="background:var(--bg);border:1px solid var(--border);"></div>
+        <div class="hm-legend-cell" style="background:#bfdbfe;"></div>
+        <div class="hm-legend-cell" style="background:#60a5fa;"></div>
+        <div class="hm-legend-cell" style="background:#2563eb;"></div>
+        <div class="hm-legend-cell" style="background:#1e3a8a;"></div>
+        More
+    </div>
+</div>
+
+<!-- Habit streaks -->
+{% if habit_streaks %}
+<p class="section-title">Habit Streaks</p>
+<div class="card">
+    {% for hs in habit_streaks %}
+    <div class="streak-row">
+        <div class="streak-icon">{{ hs.icon }}</div>
+        <div class="streak-name">{{ hs.name }}</div>
+        {% if hs.streak > 0 %}
+            <div class="streak-val">🔥 {{ hs.streak }} days</div>
+        {% else %}
+            <div class="streak-none">No streak</div>
+        {% endif %}
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+{% endblock %}

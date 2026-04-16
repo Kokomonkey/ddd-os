@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Select Anime</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; padding: 40px; text-align: center; }
+        .grid { display: flex; justify-content: center; gap: 20px; margin-top: 30px; }
+        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 200px; }
+        img { width: 140px; height: 200px; object-fit: cover; border-radius: 5px; }
+        button { background: #0984e3; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; width: 100%; margin-top: 15px; }
+    </style>
+</head>
+<body>
+    <h2>Select the correct Anime:</h2>
+    <div class="grid">
+        {% for anime in animes %}
+        <div class="card">
+            <img src="{{ anime.thumbnail }}" alt="Cover">
+            <h4 style="margin: 10px 0;">{{ anime.title }}</h4>
+            <p style="font-size: 0.8em; color: #636e72;">{{ anime.total_episodes }} Episodes</p>
+            
+            <form action="/confirm_anime" method="POST">
+                <input type="hidden" name="title" value="{{ anime.title }}">
+                <input type="hidden" name="total_episodes" value="{{ anime.total_episodes }}">
+                <input type="hidden" name="thumbnail" value="{{ anime.thumbnail }}">
+                <button type="submit">Select This</button>
+            </form>
+        </div>
+        {% else %}
+        <p>No results found! Try a different search.</p>
+        {% endfor %}
+    </div>
+    <br>
+    <a href="/media/anime" style="color: #636e72;">Cancel</a>
+</body>
+</html>

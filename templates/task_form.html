@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% if task %}Edit{% else %}New{% endif %} Task</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; display: flex; justify-content: center; padding-top: 50px; }
+        .form-container { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); width: 400px; }
+        input, select { width: 100%; padding: 10px; margin: 8px 0 20px 0; border: 1px solid #dfe6e9; border-radius: 5px; box-sizing: border-box; }
+        button { background: #0984e3; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; width: 100%; }
+        .content-section { background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #dfe6e9; }
+    </style>
+</head>
+<body>
+<div class="form-container">
+    <h2>{% if task %}Edit Task{% else %}Create Task{% endif %}</h2>
+    <form method="POST">
+        <label>Task Title</label>
+        <input type="text" name="title" value="{{ task.title if task else '' }}" required>
+
+        <label>Type</label>
+        <select name="task_type">
+            <option value="task" {% if task and task.task_type == 'task' %}selected{% endif %}>Standard</option>
+            <option value="deadline" {% if task and task.task_type == 'deadline' %}selected{% endif %}>Deadline</option>
+            <option value="event" {% if task and task.task_type == 'event' %}selected{% endif %}>Event</option>
+        </select>
+
+        <label>Date</label>
+        <input type="date" name="date" value="{{ task.date.strftime('%Y-%m-%d') if task else '' }}" required>
+
+        <label>Time</label>
+        <input type="text" name="time" value="{{ task.time if task else '' }}">
+
+        <div class="content-section">
+            <label style="font-size: 0.9em; font-weight: bold; color: #0984e3;">🔗 Link Media to Consume (Optional)</label>
+            <select name="related_book_id" style="margin-bottom: 10px;">
+                <option value="">-- No linked content --</option>
+                {% for book in active_books %}
+                    <option value="{{ book.id }}" {% if task and task.related_book_id == book.id %}selected{% endif %}>📚 {{ book.title }}</option>
+                {% endfor %}
+            </select>
+            
+            <label style="font-size: 0.9em;">Goal (e.g., "30 Pages" or "Chapter 4")</label>
+            <input type="text" name="goal" value="{{ task.goal if task else '' }}" style="margin-bottom: 0;">
+        </div>
+
+        <button type="submit">Save</button>
+    </form>
+</div>
+</body>
+</html>

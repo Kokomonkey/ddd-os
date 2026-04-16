@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% block title %}Movies & Series{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>🍿 Movies & Series</h1>
+        <p>Powered by OMDB API</p>
+    </div>
+    {% if has_api_key %}
+    <form class="search-form" action="/add_movie" method="POST">
+        <input type="text" name="search_query" placeholder="Search movie or series…" required>
+        <button type="submit" class="btn btn-dark">+ Search</button>
+    </form>
+    {% endif %}
+</div>
+
+{% if not has_api_key %}
+<div class="api-warning">
+    ⚠️ <strong>OMDB API key not set.</strong> Get a free key at <em>omdbapi.com</em>, then run:
+    <code style="background:#fff3cd;padding:2px 6px;border-radius:3px;">set OMDB_API_KEY=your_key</code> before starting the app.
+    You can still add movies manually below.
+</div>
+{% endif %}
+
+{% if current_movie %}
+<p class="section-title">Currently Watching</p>
+<div class="current-card">
+    {% if current_movie.poster_url %}
+        <img src="{{ current_movie.poster_url }}" alt="Poster">
+    {% else %}
+        <div class="current-card-placeholder">🍿</div>
+    {% endif %}
+    <div class="current-card-info">
+        <h3>{{ current_movie.title }}</h3>
+        <p class="sub">
+            {{ current_movie.year }}
+            &nbsp;<span style="background:{% if current_movie.media_type == 'series' %}#fef3c7{% else %}#e0f2fe{% endif %};
+                               color:{% if current_movie.media_type == 'series' %}#92400e{% else %}#0284c7{% endif %};
+                               padding:1px 7px;border-radius:10px;font-size:0.8em;font-weight:600;text-transform:capitalize;">
+                {{ current_movie.media_type }}
+            </span>
+        </p>
+        {% if current_movie.media_type == 'series' %}
+        <progress value="{{ current_movie.episodes_watched }}" max="{{ current_movie.total_episodes }}"></progress>
+        <div class="progress-label">
+            <span>{{ current_movie.episodes_watched }} episodes watched</span>
+            <span>{{ current_movie.total_episodes }} total</span>
+        </div>
+        <form class="update-form" action="/update_movie_progress/{{ current_movie.id }}" method="POST">
+            <label style="font-size:0.85em;color:var(--text-muted);">Episodes watched</label>
+            <input type="number" name="episodes_watched" min="0" max="{{ current_movie.total_episodes }}"
+                   value="{{ current_movie.episodes_watched }}">
+            <button type="submit" class="btn btn-primary btn-sm">Save</button>
+        </form>
+        {% else %}
+        <form class="update-form" action="/update_movie_progress/{{ current_movie.id }}" method="POST">
+            <input type="hidden" name="episodes_watched" value="1">
+            <button type="submit" class="btn btn-success btn-sm">✓ Mark as Watched</button>
+        </form>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+    <p class="section-title" style="margin:0;">Up Next ({{ movies|length }})</p>
+    <button onclick="document.getElementById('manual-form').classList.toggle('hidden')"
+            class="btn btn-ghost btn-sm">+ Add Manually</button>
+</div>
+
+<div id="manual-form" class="hidden card" style="margin-bottom:20px;padding:16px;">
+    <p style="font-weight:600;margin-bottom:12px;">Add Movie / Series Manually</p>
+    <form action="/add_movie_manual" method="POST" style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;">
+        <div>
+            <label style="font-size:0.8em;color:var(--text-muted);display:block;margin-bottom:3px;">Title</label>
+            <input type="text" name="title" required style="padding:7px 10px;border:1px solid var(--border);border-radius:6px;width:200px;">
+        </div>
+        <div>
+            <label style="font-size:0.8em;color:var(--text-muted);display:block;margin-bottom:3px;">Year</label>
+            <input type="text" name="year" style="padding:7px 10px;border:1px solid var(--border);border-radius:6px;width:80px;">
+        </div>
+        <div>
+            <label style="font-size:0.8em;color:var(--text-muted);display:block;margin-bottom:3px;">Type</label>
+            <select name="media_type" style="padding:7px 10px;border:1px solid var(--border);border-radius:6px;">
+                <option value="movie">Movie</option>
+                <option value="series">Series</option>
+            </select>
+        </div>
+        <div>
+            <label style="font-size:0.8em;color:var(--text-muted);display:block;margin-bottom:3px;">Episodes (series)</label>
+            <input type="number" name="total_episodes" value="1" min="1"
+                   style="padding:7px 10px;border:1px solid var(--border);border-radius:6px;width:80px;">
+        </div>
+        <button type="submit" class="btn btn-primary">Add</button>
+    </form>
+</div>
+
+{% if movies %}
+<div class="media-grid">
+    {% for movie in movies %}
+    <div class="media-card">
+        {% if movie.poster_url %}
+            <img src="{{ movie.poster_url }}" alt="Poster">
+        {% else %}
+            <div class="media-card-placeholder">🍿</div>
+        {% endif %}
+        <strong>{{ movie.title }}</strong>
+        <span style="display:block;color:var(--text-muted);font-size:0.85em;">
+            {{ movie.year }} · {{ movie.media_type }}
+        </span>
+        <div class="card-actions">
+            <a href="/set_watching_movie/{{ movie.id }}" class="btn btn-primary btn-sm">Watch</a>
+            <a href="/delete_movie/{{ movie.id }}" class="btn btn-danger btn-sm">✕</a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+    <div class="empty-icon">🍿</div>
+    <p>Your watchlist is empty.<br>Search or add a movie / series manually above.</p>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<style>.hidden { display: none; }</style>
+{% endblock %}

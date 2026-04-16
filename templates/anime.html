@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Anime{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>🎬 Anime Watchlist</h1>
+        <p>Powered by MyAnimeList via Jikan API</p>
+    </div>
+    <form class="search-form" action="/add_anime" method="POST">
+        <input type="text" name="search_query" placeholder="Search anime title…" required>
+        <button type="submit" class="btn btn-dark">+ Add Anime</button>
+    </form>
+</div>
+
+{% if current_anime %}
+<p class="section-title">Currently Watching</p>
+<div class="current-card">
+    {% if current_anime.cover_url %}
+        <img src="{{ current_anime.cover_url }}" alt="Cover">
+    {% else %}
+        <div class="current-card-placeholder">🎬</div>
+    {% endif %}
+    <div class="current-card-info">
+        <h3>{{ current_anime.title }}</h3>
+        <p class="sub">MyAnimeList</p>
+        <progress value="{{ current_anime.episodes_watched }}" max="{{ current_anime.total_episodes }}"></progress>
+        <div class="progress-label">
+            <span>{{ current_anime.episodes_watched }} episodes watched</span>
+            <span>{{ current_anime.total_episodes }} total</span>
+        </div>
+        <form class="update-form" action="/update_anime_progress/{{ current_anime.id }}" method="POST">
+            <label style="font-size:0.85em;color:var(--text-muted);">Episodes watched</label>
+            <input type="number" name="episodes_watched" min="0" max="{{ current_anime.total_episodes }}"
+                   value="{{ current_anime.episodes_watched }}">
+            <button type="submit" class="btn btn-primary btn-sm">Save</button>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+{% if animes %}
+<p class="section-title">Up Next ({{ animes|length }})</p>
+<div class="media-grid">
+    {% for anime in animes %}
+    <div class="media-card">
+        {% if anime.cover_url %}
+            <img src="{{ anime.cover_url }}" alt="Cover">
+        {% else %}
+            <div class="media-card-placeholder">🎬</div>
+        {% endif %}
+        <strong>{{ anime.title }}</strong>
+        <span style="display:block;color:var(--text-muted);font-size:0.9em;">{{ anime.total_episodes }} eps</span>
+        <div class="card-actions">
+            <a href="/set_watching_anime/{{ anime.id }}" class="btn btn-primary btn-sm">Watch</a>
+            <a href="/delete_anime/{{ anime.id }}" class="btn btn-danger btn-sm">✕</a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+    <div class="empty-icon">🎬</div>
+    <p>Your watchlist is empty.<br>Search for an anime above to get started.</p>
+</div>
+{% endif %}
+{% endblock %}

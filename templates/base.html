@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#16213e">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="DDD OS">
+    <link rel="manifest" href="/static/manifest.json">
+    <link rel="apple-touch-icon" href="/static/icons/icon.svg">
+    <title>{% block title %}DDD OS{% endblock %} — DouweDoesDesign</title>
+    <style>
+        :root {
+            --bg: #f0f3f7;
+            --sidebar-bg: #16213e;
+            --sidebar-text: #8892b0;
+            --sidebar-hover: #1e2d50;
+            --card-bg: #ffffff;
+            --text: #2d3436;
+            --text-muted: #636e72;
+            --border: #dfe6e9;
+            --blue: #0984e3;
+            --red: #e53e3e;
+            --green: #38a169;
+            --orange: #dd6b20;
+            --yellow: #d69e2e;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 210px;
+            background: var(--sidebar-bg);
+            padding: 20px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            flex-shrink: 0;
+            overflow-y: auto;
+        }
+
+        .sidebar-logo {
+            color: #ffffff;
+            font-size: 0.95em;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            padding: 4px 10px 16px;
+            border-bottom: 1px solid #2a3a5c;
+            margin-bottom: 6px;
+        }
+
+        .sidebar-logo span {
+            display: block;
+            font-size: 0.65em;
+            color: var(--sidebar-text);
+            font-weight: 400;
+            margin-top: 2px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .nav-section {
+            font-size: 0.6em;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #3a4a6b;
+            padding: 14px 10px 4px;
+            font-weight: 700;
+        }
+
+        .nav-item {
+            padding: 8px 10px;
+            border-radius: 7px;
+            text-decoration: none;
+            color: var(--sidebar-text);
+            font-size: 0.875em;
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            transition: all 0.15s;
+        }
+
+        .nav-item:hover { background: var(--sidebar-hover); color: #ccd6f6; }
+        .nav-item.active { background: var(--blue); color: #ffffff; }
+
+        /* Main content */
+        .main-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 28px 32px;
+        }
+
+        /* Page header */
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .page-header h1 { font-size: 1.5em; font-weight: 700; }
+        .page-header p { color: var(--text-muted); font-size: 0.9em; margin-top: 2px; }
+
+        /* Cards */
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 7px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.875em;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: opacity 0.15s;
+        }
+
+        .btn:hover { opacity: 0.85; }
+        .btn-primary { background: var(--blue); color: white; }
+        .btn-dark { background: var(--text); color: white; }
+        .btn-ghost { background: transparent; border: 1px solid var(--border); color: var(--text); }
+        .btn-success { background: var(--green); color: white; }
+        .btn-danger { background: var(--red); color: white; }
+        .btn-sm { padding: 4px 10px; font-size: 0.78em; }
+
+        /* Search form */
+        .search-form { display: flex; gap: 8px; }
+        .search-form input {
+            padding: 8px 14px;
+            border: 1px solid var(--border);
+            border-radius: 7px;
+            font-size: 0.875em;
+            width: 240px;
+            outline: none;
+        }
+        .search-form input:focus { border-color: var(--blue); }
+
+        /* Progress bar */
+        progress {
+            width: 100%;
+            height: 7px;
+            border-radius: 4px;
+            overflow: hidden;
+            accent-color: var(--blue);
+        }
+
+        /* Current item card (books/anime/manga/movies/games) */
+        .current-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+            margin-bottom: 28px;
+            border-left: 4px solid var(--blue);
+        }
+
+        .current-card img {
+            width: 90px;
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            flex-shrink: 0;
+        }
+
+        .current-card-placeholder {
+            width: 90px;
+            height: 130px;
+            background: var(--bg);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2em;
+            flex-shrink: 0;
+        }
+
+        .current-card-info { flex: 1; }
+        .current-card-info h3 { font-size: 1.1em; margin-bottom: 4px; }
+        .current-card-info .sub { color: var(--text-muted); font-size: 0.85em; margin-bottom: 12px; }
+
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.78em;
+            color: var(--text-muted);
+            margin: 6px 0 10px;
+        }
+
+        .update-form { display: flex; gap: 8px; align-items: center; margin-top: 10px; }
+        .update-form input {
+            width: 80px;
+            padding: 5px 8px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.85em;
+        }
+
+        /* Media grid */
+        .section-title {
+            font-size: 0.8em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            font-weight: 700;
+            margin-bottom: 14px;
+        }
+
+        .media-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+            gap: 14px;
+        }
+
+        .media-card {
+            background: var(--card-bg);
+            border-radius: 10px;
+            padding: 10px;
+            text-align: center;
+            font-size: 0.82em;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+            transition: transform 0.15s;
+        }
+
+        .media-card:hover { transform: translateY(-2px); }
+
+        .media-card img {
+            width: 100%;
+            height: 185px;
+            object-fit: cover;
+            border-radius: 6px;
+            margin-bottom: 8px;
+        }
+
+        .media-card-placeholder {
+            width: 100%;
+            height: 185px;
+            background: var(--bg);
+            border-radius: 6px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5em;
+        }
+
+        .media-card strong { display: block; margin-bottom: 4px; line-height: 1.3; }
+        .media-card .card-actions { margin-top: 8px; display: flex; gap: 4px; justify-content: center; flex-wrap: wrap; }
+
+        /* Tabs */
+        .tabs { display: flex; gap: 4px; margin-bottom: 20px; }
+        .tab {
+            padding: 6px 14px;
+            border-radius: 20px;
+            text-decoration: none;
+            font-size: 0.82em;
+            font-weight: 600;
+            color: var(--text-muted);
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            transition: all 0.15s;
+        }
+        .tab:hover { border-color: var(--blue); color: var(--blue); }
+        .tab.active { background: var(--blue); color: white; border-color: var(--blue); }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 48px 20px;
+            color: var(--text-muted);
+        }
+        .empty-state .empty-icon { font-size: 3em; margin-bottom: 12px; }
+
+        /* API key warning */
+        .api-warning {
+            background: #fff8e1;
+            border: 1px solid #ffc107;
+            border-radius: 8px;
+            padding: 12px 16px;
+            font-size: 0.85em;
+            margin-bottom: 20px;
+            color: #856404;
+        }
+
+        /* ── MOBILE ──────────────────────────────────────────────────────────── */
+        .mobile-header { display: none; }
+        #sidebar-overlay { display: none; }
+
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column;
+                height: auto;
+                overflow-y: auto;
+            }
+
+            .mobile-header {
+                display: flex;
+                position: fixed;
+                top: 0; left: 0; right: 0;
+                height: 54px;
+                background: var(--sidebar-bg);
+                align-items: center;
+                justify-content: space-between;
+                padding: 0 16px;
+                padding-top: env(safe-area-inset-top);
+                z-index: 500;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            }
+
+            .mobile-logo {
+                color: white;
+                font-weight: 700;
+                font-size: 1em;
+                letter-spacing: 0.5px;
+            }
+
+            .hamburger-btn {
+                background: none;
+                border: none;
+                color: white;
+                font-size: 1.5em;
+                cursor: pointer;
+                padding: 8px 10px;
+                border-radius: 8px;
+                line-height: 1;
+                -webkit-tap-highlight-color: transparent;
+            }
+
+            .sidebar {
+                position: fixed;
+                left: -220px;
+                top: 0;
+                height: 100%;
+                z-index: 1000;
+                transition: left 0.25s ease;
+                box-shadow: 4px 0 24px rgba(0,0,0,0.35);
+                overflow-y: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .sidebar.open { left: 0; }
+
+            #sidebar-overlay {
+                display: block;
+                position: fixed;
+                inset: 0;
+                background: rgba(0,0,0,0.5);
+                z-index: 999;
+                opacity: 0;
+                pointer-events: none;
+                transition: opacity 0.25s;
+            }
+
+            #sidebar-overlay.visible {
+                opacity: 1;
+                pointer-events: all;
+            }
+
+            .main-content {
+                padding: 70px 14px 32px;
+                min-height: 100vh;
+            }
+
+            /* Larger touch targets */
+            .btn { min-height: 42px; }
+            .btn-sm { min-height: 36px; padding: 6px 12px; font-size: 0.82em; }
+            .nav-item { padding: 12px 10px; font-size: 0.95em; }
+
+            /* Responsive forms */
+            .search-form { flex-wrap: wrap; }
+            .search-form input { width: 100%; }
+            .update-form { flex-wrap: wrap; }
+            .page-header { flex-wrap: wrap; gap: 10px; }
+
+            /* Grids adapt to narrow screens */
+            .media-grid { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); }
+        }
+    </style>
+    {% block head %}{% endblock %}
+</head>
+<body>
+
+<!-- Mobile top bar -->
+<div class="mobile-header">
+    <span class="mobile-logo">✨ DDD OS</span>
+    <button class="hamburger-btn" onclick="toggleSidebar()" aria-label="Open menu">☰</button>
+</div>
+<div id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+<div class="sidebar">
+    <div class="sidebar-logo">
+        DDD OS
+        <span>DouweDoesDesign</span>
+    </div>
+
+    <a href="/" class="nav-item {% if active == 'calendar' %}active{% endif %}">📅 Calendar</a>
+
+    <div class="nav-section">Consume</div>
+    <a href="/media/books" class="nav-item {% if active == 'books' %}active{% endif %}">📚 Books</a>
+    <a href="/media/manga" class="nav-item {% if active == 'manga' %}active{% endif %}">📖 Manga</a>
+    <a href="/media/anime" class="nav-item {% if active == 'anime' %}active{% endif %}">🎬 Anime</a>
+
+    <div class="nav-section">Grow</div>
+    <a href="/skills" class="nav-item {% if active == 'skills' %}active{% endif %}">🎯 Skills</a>
+    <a href="/habits" class="nav-item {% if active == 'habits' %}active{% endif %}">✅ Habits</a>
+
+    <div class="nav-section">Brand</div>
+    <a href="/presentation" class="nav-item {% if active == 'presentation' %}active{% endif %}">✨ DouweDoesDesign</a>
+
+    <div class="nav-section">Extras</div>
+    <a href="/spin" class="nav-item {% if active == 'spin' %}active{% endif %}">🎲 Spin</a>
+    <a href="/stats" class="nav-item {% if active == 'stats' %}active{% endif %}">📊 Stats</a>
+</div>
+
+<div class="main-content">
+    {% block content %}{% endblock %}
+</div>
+
+{% block scripts %}{% endblock %}
+
+<script>
+// Mobile sidebar toggle
+function toggleSidebar() {
+    document.querySelector('.sidebar').classList.toggle('open');
+    document.getElementById('sidebar-overlay').classList.toggle('visible');
+}
+function closeSidebar() {
+    document.querySelector('.sidebar').classList.remove('open');
+    document.getElementById('sidebar-overlay').classList.remove('visible');
+}
+document.querySelectorAll('.nav-item').forEach(a => a.addEventListener('click', closeSidebar));
+
+// Register service worker for PWA
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+}
+</script>
+
+</body>
+</html>

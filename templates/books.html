@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}Books{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>📚 Reading List</h1>
+        <p>Books & Architecture books</p>
+    </div>
+    <form class="search-form" action="/add_book" method="POST">
+        <input type="hidden" name="category" value="{{ category if category != 'all' else 'general' }}">
+        <input type="text" name="search_query" placeholder="Search title or author…" required>
+        <button type="submit" class="btn btn-dark">+ Add Book</button>
+    </form>
+</div>
+
+{% if current_book %}
+<p class="section-title">Currently Reading</p>
+<div class="current-card">
+    {% if current_book.cover_url %}
+        <img src="{{ current_book.cover_url }}" alt="Cover">
+    {% else %}
+        <div class="current-card-placeholder">📚</div>
+    {% endif %}
+    <div class="current-card-info">
+        <h3>{{ current_book.title }}</h3>
+        <p class="sub">by {{ current_book.author }}
+            {% if current_book.category == 'architecture' %}
+            &nbsp;<span style="background:#e0f2fe;color:#0284c7;padding:2px 7px;border-radius:10px;font-size:0.8em;font-weight:600;">Architecture</span>
+            {% endif %}
+        </p>
+        <progress value="{{ current_book.pages_read }}" max="{{ current_book.total_pages }}"></progress>
+        <div class="progress-label">
+            <span>{{ current_book.pages_read }} pages read</span>
+            <span>{{ current_book.total_pages }} total</span>
+        </div>
+        <form class="update-form" action="/update_progress/{{ current_book.id }}" method="POST">
+            <label style="font-size:0.85em;color:var(--text-muted);">Update to page</label>
+            <input type="number" name="pages_read" min="0" max="{{ current_book.total_pages }}"
+                   value="{{ current_book.pages_read }}">
+            <button type="submit" class="btn btn-primary btn-sm">Save</button>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+<div class="tabs">
+    <a href="/media/books?category=all" class="tab {% if category == 'all' %}active{% endif %}">All</a>
+    <a href="/media/books?category=general" class="tab {% if category == 'general' %}active{% endif %}">General</a>
+    <a href="/media/books?category=architecture" class="tab {% if category == 'architecture' %}active{% endif %}">Architecture</a>
+</div>
+
+{% if books %}
+<p class="section-title">Up Next ({{ books|length }})</p>
+<div class="media-grid">
+    {% for book in books %}
+    <div class="media-card">
+        {% if book.cover_url %}
+            <img src="{{ book.cover_url }}" alt="Cover">
+        {% else %}
+            <div class="media-card-placeholder">📚</div>
+        {% endif %}
+        <strong>{{ book.title }}</strong>
+        <span style="display:block;color:var(--text-muted);font-size:0.9em;">{{ book.author }}</span>
+        <span style="display:block;color:var(--text-muted);font-size:0.82em;">{{ book.total_pages }} pages</span>
+        {% if book.category == 'architecture' %}
+        <span style="background:#e0f2fe;color:#0284c7;padding:1px 6px;border-radius:8px;font-size:0.75em;font-weight:600;">Architecture</span>
+        {% endif %}
+        <div class="card-actions">
+            <a href="/set_reading/{{ book.id }}" class="btn btn-primary btn-sm">Start</a>
+            <a href="/delete_book/{{ book.id }}" class="btn btn-danger btn-sm">✕</a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+    <div class="empty-icon">📖</div>
+    <p>Your reading list is empty.<br>Search for a book above to get started.</p>
+</div>
+{% endif %}
+{% endblock %}

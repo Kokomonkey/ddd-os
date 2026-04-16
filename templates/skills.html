@@ -1,0 +1,216 @@
+{% extends "base.html" %}
+{% block title %}Skills{% endblock %}
+
+{% block head %}
+<style>
+    .skill-section { margin-bottom: 32px; }
+    .skill-section-title {
+        font-size: 0.72em;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        color: var(--text-muted);
+        font-weight: 700;
+        margin-bottom: 12px;
+        padding-bottom: 6px;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .skill-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+        gap: 12px;
+    }
+
+    .skill-card {
+        background: var(--card-bg);
+        border-radius: 10px;
+        padding: 14px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+        border-top: 3px solid var(--border);
+        transition: transform 0.15s;
+    }
+
+    .skill-card:hover { transform: translateY(-2px); }
+    .skill-card.today { border-top-color: var(--green); }
+    .skill-card.this-week { border-top-color: var(--blue); }
+    .skill-card.this-month { border-top-color: var(--orange); }
+    .skill-card.stale { border-top-color: var(--red); }
+
+    .skill-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 6px;
+        margin-bottom: 10px;
+    }
+
+    .skill-name { font-weight: 700; font-size: 0.88em; line-height: 1.3; }
+
+    .level-badge {
+        font-size: 0.62em;
+        font-weight: 700;
+        padding: 2px 7px;
+        border-radius: 10px;
+        white-space: nowrap;
+        flex-shrink: 0;
+        line-height: 1.6;
+    }
+
+    .xp-bar-container {
+        background: var(--bg);
+        border-radius: 4px;
+        height: 5px;
+        overflow: hidden;
+        margin-bottom: 3px;
+    }
+
+    .xp-bar-fill {
+        height: 100%;
+        border-radius: 4px;
+        transition: width 0.4s ease;
+    }
+
+    .xp-label {
+        font-size: 0.65em;
+        color: var(--text-muted);
+        margin-bottom: 8px;
+        text-align: right;
+    }
+
+    .skill-meta { font-size: 0.75em; color: var(--text-muted); margin-bottom: 10px; line-height: 1.6; }
+
+    .freshness-dot {
+        display: inline-block;
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        margin-right: 4px;
+        vertical-align: middle;
+    }
+
+    .log-toggle {
+        font-size: 0.75em;
+        color: var(--blue);
+        cursor: pointer;
+        text-decoration: none;
+        display: block;
+        margin-bottom: 6px;
+    }
+
+    .log-form {
+        display: none;
+        flex-direction: column;
+        gap: 6px;
+        margin-top: 6px;
+        padding-top: 8px;
+        border-top: 1px solid var(--border);
+    }
+
+    .log-form.open { display: flex; }
+
+    .log-form input, .log-form textarea {
+        padding: 5px 8px;
+        border: 1px solid var(--border);
+        border-radius: 5px;
+        font-size: 0.8em;
+        width: 100%;
+        font-family: inherit;
+    }
+
+    .log-form textarea { resize: vertical; min-height: 40px; }
+    .log-form label { font-size: 0.75em; color: var(--text-muted); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>🎯 Skills Tracker</h1>
+        <p>Log practice sessions · earn XP · level up</p>
+    </div>
+</div>
+
+{% for category, skills in categories.items() %}
+<div class="skill-section">
+    <p class="skill-section-title">{{ category }}</p>
+    <div class="skill-grid">
+        {% for skill in skills %}
+        {% set hours = (skill.total_minutes // 60) %}
+        {% set mins = (skill.total_minutes % 60) %}
+        {% set lv = skill_levels[skill.id] %}
+
+        {% if skill.last_practiced %}
+            {% set days_ago = (today - skill.last_practiced).days %}
+        {% else %}
+            {% set days_ago = 9999 %}
+        {% endif %}
+
+        {% if days_ago == 0 %}
+            {% set freshness = 'today' %}
+            {% set dot_color = '#38a169' %}
+            {% set last_label = 'Practiced today' %}
+        {% elif days_ago <= 7 %}
+            {% set freshness = 'this-week' %}
+            {% set dot_color = '#0984e3' %}
+            {% set last_label = days_ago ~ 'd ago' %}
+        {% elif days_ago <= 30 %}
+            {% set freshness = 'this-month' %}
+            {% set dot_color = '#dd6b20' %}
+            {% set last_label = days_ago ~ 'd ago' %}
+        {% elif days_ago < 9999 %}
+            {% set freshness = 'stale' %}
+            {% set dot_color = '#e53e3e' %}
+            {% set last_label = days_ago ~ 'd ago' %}
+        {% else %}
+            {% set freshness = '' %}
+            {% set dot_color = '#b2bec3' %}
+            {% set last_label = 'Never practiced' %}
+        {% endif %}
+
+        <div class="skill-card {{ freshness }}">
+            <div class="skill-header">
+                <div class="skill-name">{{ skill.name }}</div>
+                <div class="level-badge"
+                     style="background:{{ lv.color }}22;color:{{ lv.color }};border:1px solid {{ lv.color }}55;">
+                    Lv.{{ lv.level }} {{ lv.name }}
+                </div>
+            </div>
+
+            <div class="xp-bar-container">
+                <div class="xp-bar-fill" style="width:{{ lv.pct }}%;background:{{ lv.color }};"></div>
+            </div>
+            <div class="xp-label">
+                {% if lv.is_max %}MAX · {{ lv.xp }} XP{% else %}{{ lv.xp_in_level }} / {{ lv.xp_to_next }} XP{% endif %}
+            </div>
+
+            <div class="skill-meta">
+                <span class="freshness-dot" style="background:{{ dot_color }};"></span>{{ last_label }}<br>
+                ⏱ {% if hours > 0 %}{{ hours }}h {% endif %}{{ mins }}m total
+            </div>
+            <a class="log-toggle" onclick="toggleLog({{ skill.id }})">+ Log session</a>
+            <form class="log-form" id="log-{{ skill.id }}"
+                  action="/skills/log/{{ skill.id }}" method="POST">
+                <div>
+                    <label>Duration (minutes)</label>
+                    <input type="number" name="duration" value="30" min="5" max="480">
+                </div>
+                <div>
+                    <label>Notes (optional)</label>
+                    <textarea name="notes" placeholder="What did you work on?"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary btn-sm">Log</button>
+            </form>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endfor %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+function toggleLog(skillId) {
+    document.getElementById('log-' + skillId).classList.toggle('open');
+}
+</script>
+{% endblock %}

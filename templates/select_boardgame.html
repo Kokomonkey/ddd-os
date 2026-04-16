@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Select Board Game</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f3f7; padding: 40px; text-align: center; }
+        .grid { display: flex; justify-content: center; gap: 20px; margin-top: 30px; flex-wrap: wrap; }
+        .card { background: white; padding: 16px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.08); width: 190px; }
+        .cover { width: 100%; height: 130px; object-fit: cover; border-radius: 6px; }
+        .no-cover { width: 100%; height: 130px; background: #f0f3f7; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 2.5em; }
+        button { background: #0984e3; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; width: 100%; margin-top: 10px; font-weight: 600; }
+        .note { color: #636e72; font-size: 0.85em; margin-bottom: 20px; }
+        a { color: #636e72; }
+    </style>
+</head>
+<body>
+    <h2>Select the correct board game:</h2>
+    {% if boardgames %}
+    <div class="grid">
+        {% for bg in boardgames %}
+        <div class="card">
+            {% if bg.cover_url %}
+                <img class="cover" src="{{ bg.cover_url }}" alt="Cover">
+            {% else %}
+                <div class="no-cover">🎲</div>
+            {% endif %}
+            <h4 style="margin:10px 0 4px;font-size:0.9em;">{{ bg.title }}</h4>
+            {% if bg.year %}<p style="font-size:0.78em;color:#636e72;margin:0 0 4px;">{{ bg.year }}</p>{% endif %}
+            <form action="/confirm_boardgame" method="POST">
+                <input type="hidden" name="title" value="{{ bg.title }}">
+                <input type="hidden" name="cover_url" value="{{ bg.cover_url }}">
+                <button type="submit">Add to Collection</button>
+            </form>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="note">No results found, or BoardGameGeek took too long to respond.<br>Try again with a different search term.</p>
+    {% endif %}
+    <br>
+    <a href="/media/boardgames">← Cancel</a>
+</body>
+</html>

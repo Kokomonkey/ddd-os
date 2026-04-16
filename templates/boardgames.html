@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Board Games{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>🎲 Board Games</h1>
+        <p>Powered by BoardGameGeek (no API key needed)</p>
+    </div>
+    <form class="search-form" action="/add_boardgame" method="POST">
+        <input type="text" name="search_query" placeholder="Search board game…" required>
+        <button type="submit" class="btn btn-dark">+ Search BGG</button>
+    </form>
+</div>
+
+{% if current_bg %}
+<p class="section-title">Currently Playing</p>
+<div class="current-card">
+    {% if current_bg.cover_url %}
+        <img src="{{ current_bg.cover_url }}" alt="Cover">
+    {% else %}
+        <div class="current-card-placeholder">🎲</div>
+    {% endif %}
+    <div class="current-card-info">
+        <h3>{{ current_bg.title }}</h3>
+        <p class="sub">BoardGameGeek</p>
+        <p style="font-size:1.4em;font-weight:700;margin:10px 0;">{{ current_bg.play_count }}</p>
+        <p style="font-size:0.8em;color:var(--text-muted);margin-bottom:12px;">times played</p>
+        <a href="/log_boardgame/{{ current_bg.id }}" class="btn btn-success btn-sm">+ Log a Play Session</a>
+    </div>
+</div>
+{% endif %}
+
+{% if boardgames %}
+<p class="section-title">Collection ({{ boardgames|length }})</p>
+<div class="media-grid">
+    {% for bg in boardgames %}
+    <div class="media-card">
+        {% if bg.cover_url %}
+            <img src="{{ bg.cover_url }}" alt="Cover">
+        {% else %}
+            <div class="media-card-placeholder">🎲</div>
+        {% endif %}
+        <strong>{{ bg.title }}</strong>
+        <span style="display:block;color:var(--text-muted);font-size:0.85em;">{{ bg.play_count }}× played</span>
+        <div class="card-actions">
+            <a href="/set_playing_boardgame/{{ bg.id }}" class="btn btn-primary btn-sm">Set Active</a>
+            <a href="/log_boardgame/{{ bg.id }}" class="btn btn-ghost btn-sm">+1</a>
+            <a href="/delete_boardgame/{{ bg.id }}" class="btn btn-danger btn-sm">✕</a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+    <div class="empty-icon">🎲</div>
+    <p>Your collection is empty.<br>Search BoardGameGeek above to add games.<br>
+    <em style="font-size:0.85em;">(BGG search can take a few seconds)</em></p>
+</div>
+{% endif %}
+{% endblock %}

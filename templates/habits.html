@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block title %}Habits{% endblock %}
+
+{% block head %}
+<style>
+    .habits-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 28px; }
+
+    .habit-card {
+        background: var(--card-bg);
+        border-radius: 12px;
+        padding: 16px 20px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        border-left: 4px solid var(--border);
+        transition: transform 0.15s, border-left-color 0.2s;
+    }
+
+    .habit-card.done { border-left-color: var(--green); }
+    .habit-card:hover { transform: translateX(2px); }
+
+    .habit-icon { font-size: 1.8em; flex-shrink: 0; line-height: 1; }
+
+    .habit-info { flex: 1; }
+    .habit-name { font-weight: 700; font-size: 0.95em; margin-bottom: 3px; }
+    .habit-streak { font-size: 0.8em; color: var(--text-muted); }
+    .habit-streak strong { color: var(--orange); }
+
+    .habit-actions { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+    .done-label { color: var(--green); font-weight: 700; font-size: 0.88em; }
+
+    .add-habit-card {
+        background: var(--card-bg);
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+
+    .add-habit-card input {
+        padding: 8px 12px;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        font-size: 0.875em;
+        font-family: inherit;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>✅ Daily Habits</h1>
+        <p>Build streaks · build discipline</p>
+    </div>
+</div>
+
+{% if habit_data %}
+<div class="habits-list">
+    {% for hd in habit_data %}
+    {% set h = hd.habit %}
+    <div class="habit-card {% if hd.done_today %}done{% endif %}">
+        <div class="habit-icon">{{ h.icon }}</div>
+        <div class="habit-info">
+            <div class="habit-name">{{ h.name }}</div>
+            <div class="habit-streak">
+                {% if hd.streak >= 7 %}
+                    🔥 <strong>{{ hd.streak }}-day streak</strong> — on fire!
+                {% elif hd.streak > 0 %}
+                    🔥 <strong>{{ hd.streak }}-day streak</strong>
+                {% else %}
+                    No streak yet — start today!
+                {% endif %}
+            </div>
+        </div>
+        <div class="habit-actions">
+            {% if hd.done_today %}
+                <span class="done-label">✓ Done</span>
+                <a href="/habits/unlog/{{ h.id }}" class="btn btn-ghost btn-sm">Undo</a>
+            {% else %}
+                <a href="/habits/log/{{ h.id }}" class="btn btn-success btn-sm">Mark Done</a>
+            {% endif %}
+            <a href="/habits/delete/{{ h.id }}" class="btn btn-danger btn-sm">✕</a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+    <div class="empty-icon">✅</div>
+    <p>No habits yet. Add your first daily habit below.</p>
+</div>
+{% endif %}
+
+<p class="section-title">Add Habit</p>
+<div class="add-habit-card">
+    <form action="/habits/add" method="POST"
+          style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;">
+        <div style="flex:1;min-width:180px;">
+            <label style="font-size:0.8em;color:var(--text-muted);display:block;margin-bottom:4px;">Habit</label>
+            <input type="text" name="name" placeholder="e.g. Morning run" required style="width:100%;">
+        </div>
+        <div style="width:80px;">
+            <label style="font-size:0.8em;color:var(--text-muted);display:block;margin-bottom:4px;">Icon</label>
+            <input type="text" name="icon" placeholder="🏃" maxlength="4" style="width:100%;">
+        </div>
+        <button type="submit" class="btn btn-primary">Add Habit</button>
+    </form>
+</div>
+{% endblock %}

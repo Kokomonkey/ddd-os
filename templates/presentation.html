@@ -1,0 +1,299 @@
+{% extends "base.html" %}
+{% block title %}DouweDoesDesign{% endblock %}
+
+{% block head %}
+<style>
+    .ddd-hero {
+        background: linear-gradient(135deg, #16213e 0%, #0f3460 50%, #16213e 100%);
+        border-radius: 14px;
+        padding: 32px 36px;
+        margin-bottom: 28px;
+        color: white;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .ddd-hero::before {
+        content: '';
+        position: absolute;
+        top: -40px; right: -40px;
+        width: 200px; height: 200px;
+        background: rgba(9,132,227,0.15);
+        border-radius: 50%;
+    }
+
+    .ddd-hero h1 { font-size: 2em; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 4px; }
+    .ddd-hero p { color: #8892b0; font-size: 0.9em; }
+
+    /* Reminders */
+    .reminders-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 14px;
+        margin-bottom: 28px;
+    }
+
+    .reminder-card {
+        background: var(--card-bg);
+        border-radius: 12px;
+        padding: 18px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        border-left: 4px solid var(--border);
+        transition: transform 0.15s;
+    }
+
+    .reminder-card:hover { transform: translateY(-2px); }
+    .reminder-card.fresh { border-left-color: var(--green); }
+    .reminder-card.soon { border-left-color: var(--yellow); }
+    .reminder-card.due { border-left-color: var(--orange); }
+    .reminder-card.overdue { border-left-color: var(--red); }
+
+    .reminder-icon { font-size: 1.8em; margin-bottom: 8px; display: block; }
+    .reminder-title { font-weight: 700; font-size: 0.95em; margin-bottom: 6px; }
+
+    .reminder-status {
+        font-size: 0.78em;
+        color: var(--text-muted);
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .status-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+
+    /* Projects */
+    .projects-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 16px;
+        margin-bottom: 28px;
+    }
+
+    .project-card {
+        background: var(--card-bg);
+        border-radius: 12px;
+        padding: 18px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        border-top: 4px solid var(--blue);
+    }
+
+    .project-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+    .project-icon { font-size: 1.4em; flex-shrink: 0; }
+    .project-name { font-weight: 700; font-size: 0.95em; }
+    .project-progress-label { font-size: 0.78em; color: var(--text-muted); margin-bottom: 4px; }
+
+    .project-tasks { list-style: none; margin: 10px 0; }
+
+    .project-task-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 5px 0;
+        font-size: 0.84em;
+        border-bottom: 1px solid var(--bg);
+    }
+
+    .project-task-item:last-child { border-bottom: none; }
+    .project-task-item.done span.task-label { text-decoration: line-through; color: var(--text-muted); }
+
+    .task-toggle { text-decoration: none; font-size: 1em; flex-shrink: 0; line-height: 1; }
+    .task-label { flex: 1; }
+    .task-cal-date { font-size: 0.72em; color: var(--blue); white-space: nowrap; }
+    .task-del { color: var(--text-muted); text-decoration: none; font-size: 0.8em; flex-shrink: 0; }
+    .task-del:hover { color: var(--red); }
+
+    .add-task-toggle {
+        font-size: 0.75em;
+        color: var(--blue);
+        cursor: pointer;
+        display: block;
+        margin-top: 10px;
+        padding-top: 8px;
+        border-top: 1px solid var(--border);
+    }
+
+    .add-task-form { display: none; margin-top: 8px; }
+    .add-task-form.open { display: block; }
+    .add-task-form input {
+        width: 100%;
+        padding: 6px 10px;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        font-size: 0.82em;
+        font-family: inherit;
+        margin-bottom: 6px;
+    }
+
+    /* Add forms */
+    .add-card {
+        background: var(--card-bg);
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        margin-bottom: 28px;
+    }
+
+    .add-card input, .add-card textarea {
+        width: 100%;
+        padding: 8px 12px;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        font-size: 0.875em;
+        font-family: inherit;
+        margin-bottom: 10px;
+    }
+
+    .add-card textarea { resize: vertical; min-height: 50px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="ddd-hero">
+    <h1>✨ DouweDoesDesign</h1>
+    <p>Your personal brand dashboard — stay consistent, stay visible.</p>
+</div>
+
+<!-- REMINDERS -->
+<p class="section-title">Reminders</p>
+<div class="reminders-grid">
+    {% for reminder in reminders %}
+        {% if reminder.last_done %}
+            {% set days_ago = (today - reminder.last_done).days %}
+        {% else %}
+            {% set days_ago = 9999 %}
+        {% endif %}
+
+        {% if days_ago == 0 %}
+            {% set urgency = 'fresh' %}
+            {% set dot_color = '#38a169' %}
+            {% set status_text = 'Done today ✓' %}
+        {% elif days_ago <= 3 %}
+            {% set urgency = 'soon' %}
+            {% set dot_color = '#d69e2e' %}
+            {% set status_text = days_ago ~ 'd ago' %}
+        {% elif days_ago <= 7 %}
+            {% set urgency = 'due' %}
+            {% set dot_color = '#dd6b20' %}
+            {% set status_text = days_ago ~ 'd ago — due soon' %}
+        {% elif days_ago < 9999 %}
+            {% set urgency = 'overdue' %}
+            {% set dot_color = '#e53e3e' %}
+            {% set status_text = days_ago ~ 'd ago — overdue!' %}
+        {% else %}
+            {% set urgency = 'overdue' %}
+            {% set dot_color = '#b2bec3' %}
+            {% set status_text = 'Never done' %}
+        {% endif %}
+
+    <div class="reminder-card {{ urgency }}">
+        <span class="reminder-icon">{{ reminder.icon }}</span>
+        <div class="reminder-title">{{ reminder.title }}</div>
+        <div class="reminder-status">
+            <span class="status-dot" style="background:{{ dot_color }};"></span>
+            {{ status_text }}
+        </div>
+        {% if reminder.notes %}
+            <p style="font-size:0.8em;color:var(--text-muted);margin-bottom:10px;">{{ reminder.notes }}</p>
+        {% endif %}
+        <a href="/reminder/done/{{ reminder.id }}" class="btn btn-success btn-sm">✓ Done Today</a>
+        <a href="/reminder/delete/{{ reminder.id }}"
+           style="font-size:0.75em;color:var(--text-muted);text-decoration:none;margin-left:8px;">remove</a>
+    </div>
+    {% endfor %}
+</div>
+
+<p class="section-title">Add Reminder</p>
+<div class="add-card">
+    <form action="/reminder/add" method="POST" style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;">
+        <div style="flex:1;min-width:160px;">
+            <label style="font-size:0.8em;color:var(--text-muted);display:block;margin-bottom:4px;">Reminder</label>
+            <input type="text" name="title" placeholder="e.g. Post on TikTok" required>
+        </div>
+        <div style="width:70px;">
+            <label style="font-size:0.8em;color:var(--text-muted);display:block;margin-bottom:4px;">Icon</label>
+            <input type="text" name="icon" placeholder="📌" maxlength="4">
+        </div>
+        <div style="flex:2;min-width:180px;">
+            <label style="font-size:0.8em;color:var(--text-muted);display:block;margin-bottom:4px;">Notes (optional)</label>
+            <input type="text" name="notes" placeholder="e.g. Architecture sketch or render">
+        </div>
+        <button type="submit" class="btn btn-primary">Add</button>
+    </form>
+</div>
+
+<!-- PROJECTS -->
+<p class="section-title">Projects</p>
+<div class="projects-grid">
+    {% for pd in project_data %}
+    {% set p = pd.project %}
+    <div class="project-card" style="border-top-color:{{ p.color }};">
+        <div class="project-header">
+            <span class="project-icon">{{ p.icon }}</span>
+            <div class="project-name">{{ p.name }}</div>
+        </div>
+
+        <div class="project-progress-label">{{ pd.done }} / {{ pd.total }} tasks complete</div>
+        <progress value="{{ pd.done }}" max="{{ pd.total if pd.total > 0 else 1 }}"
+                  style="width:100%;margin-bottom:10px;accent-color:{{ p.color }};"></progress>
+
+        <ul class="project-tasks">
+            {% for task in pd.tasks %}
+            <li class="project-task-item {% if task.is_completed %}done{% endif %}">
+                <a href="/project/task/toggle/{{ task.id }}" class="task-toggle">
+                    {% if task.is_completed %}✅{% else %}⬜{% endif %}
+                </a>
+                <span class="task-label">{{ task.title }}</span>
+                {% if task.calendar_date %}
+                <span class="task-cal-date">📅 {{ task.calendar_date.strftime('%b %d') }}</span>
+                {% endif %}
+                <a href="/project/task/delete/{{ task.id }}" class="task-del">✕</a>
+            </li>
+            {% endfor %}
+        </ul>
+
+        <a class="add-task-toggle" onclick="toggleTaskForm({{ p.id }})">+ Add task</a>
+        <div class="add-task-form" id="task-form-{{ p.id }}">
+            <form action="/project/{{ p.id }}/task/add" method="POST">
+                <input type="text" name="title" placeholder="Task title" required>
+                <input type="date" name="calendar_date">
+                <button type="submit" class="btn btn-primary btn-sm" style="width:100%;">Add to Project</button>
+            </form>
+        </div>
+
+        <div style="margin-top:12px;text-align:right;">
+            <a href="/project/delete/{{ p.id }}"
+               style="font-size:0.72em;color:var(--text-muted);text-decoration:none;">remove project</a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<p class="section-title">Add Project</p>
+<div class="add-card">
+    <form action="/project/add" method="POST" style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;">
+        <div style="flex:1;min-width:160px;">
+            <label style="font-size:0.8em;color:var(--text-muted);display:block;margin-bottom:4px;">Project Name</label>
+            <input type="text" name="name" placeholder="e.g. Graduation Thesis" required>
+        </div>
+        <div style="width:70px;">
+            <label style="font-size:0.8em;color:var(--text-muted);display:block;margin-bottom:4px;">Icon</label>
+            <input type="text" name="icon" placeholder="📁" maxlength="4">
+        </div>
+        <div style="width:80px;">
+            <label style="font-size:0.8em;color:var(--text-muted);display:block;margin-bottom:4px;">Color</label>
+            <input type="color" name="color" value="#0984e3" style="height:36px;padding:2px 4px;border-radius:6px;border:1px solid var(--border);cursor:pointer;">
+        </div>
+        <button type="submit" class="btn btn-primary">Add Project</button>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function toggleTaskForm(pid) {
+    const form = document.getElementById('task-form-' + pid);
+    form.classList.toggle('open');
+}
+</script>
+{% endblock %}

@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Select Manga</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f3f7; padding: 40px; text-align: center; }
+        .grid { display: flex; justify-content: center; gap: 20px; margin-top: 30px; flex-wrap: wrap; }
+        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.08); width: 190px; }
+        img { width: 140px; height: 200px; object-fit: cover; border-radius: 5px; }
+        button { background: #0984e3; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; width: 100%; margin-top: 15px; font-weight: 600; }
+        a { color: #636e72; }
+    </style>
+</head>
+<body>
+    <h2>Select the correct manga:</h2>
+    <div class="grid">
+        {% for manga in mangas %}
+        <div class="card">
+            {% if manga.thumbnail %}<img src="{{ manga.thumbnail }}" alt="Cover">{% endif %}
+            <h4 style="margin:10px 0 4px;">{{ manga.title }}</h4>
+            <p style="font-size:0.8em;color:#636e72;">
+                {% if manga.total_chapters > 0 %}{{ manga.total_chapters }} chapters{% else %}Ongoing{% endif %}
+            </p>
+            <form action="/confirm_manga" method="POST">
+                <input type="hidden" name="title" value="{{ manga.title }}">
+                <input type="hidden" name="total_chapters" value="{{ manga.total_chapters }}">
+                <input type="hidden" name="thumbnail" value="{{ manga.thumbnail }}">
+                <button type="submit">Add to List</button>
+            </form>
+        </div>
+        {% else %}
+        <p>No results found. Try a different search.</p>
+        {% endfor %}
+    </div>
+    <br>
+    <a href="/media/manga">← Cancel</a>
+</body>
+</html>

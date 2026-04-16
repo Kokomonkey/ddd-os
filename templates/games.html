@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}Video Games{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>🎮 Video Games</h1>
+        <p>Powered by RAWG.io API</p>
+    </div>
+    {% if has_api_key %}
+    <form class="search-form" action="/add_game" method="POST">
+        <input type="text" name="search_query" placeholder="Search game title…" required>
+        <button type="submit" class="btn btn-dark">+ Search</button>
+    </form>
+    {% endif %}
+</div>
+
+{% if not has_api_key %}
+<div class="api-warning">
+    ⚠️ <strong>RAWG API key not set.</strong> Get a free key at <em>rawg.io/apidocs</em>, then run:
+    <code style="background:#fff3cd;padding:2px 6px;border-radius:3px;">set RAWG_API_KEY=your_key</code> before starting the app.
+    You can still add games manually below.
+</div>
+{% endif %}
+
+{% if current_game %}
+<p class="section-title">Currently Playing</p>
+<div class="current-card">
+    {% if current_game.cover_url %}
+        <img src="{{ current_game.cover_url }}" alt="Cover" style="height:90px;object-fit:cover;">
+    {% else %}
+        <div class="current-card-placeholder">🎮</div>
+    {% endif %}
+    <div class="current-card-info">
+        <h3>{{ current_game.title }}</h3>
+        <p class="sub">{{ current_game.platform or 'Unknown platform' }}</p>
+        <p style="font-size:1.4em;font-weight:700;margin:8px 0;">{{ current_game.hours_played | round(1) }}h</p>
+        <p style="font-size:0.8em;color:var(--text-muted);margin-bottom:10px;">hours logged</p>
+        <form class="update-form" action="/update_game_hours/{{ current_game.id }}" method="POST">
+            <label style="font-size:0.85em;color:var(--text-muted);">Total hours</label>
+            <input type="number" name="hours_played" min="0" step="0.5"
+                   value="{{ current_game.hours_played }}">
+            <button type="submit" class="btn btn-primary btn-sm">Save</button>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+    <p class="section-title" style="margin:0;">Backlog ({{ games|length }})</p>
+    <button onclick="document.getElementById('manual-form').classList.toggle('hidden')"
+            class="btn btn-ghost btn-sm">+ Add Manually</button>
+</div>
+
+<div id="manual-form" class="hidden card" style="margin-bottom:20px;padding:16px;">
+    <p style="font-weight:600;margin-bottom:12px;">Add Game Manually</p>
+    <form action="/confirm_game" method="POST" style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;">
+        <div>
+            <label style="font-size:0.8em;color:var(--text-muted);display:block;margin-bottom:3px;">Title</label>
+            <input type="text" name="title" required style="padding:7px 10px;border:1px solid var(--border);border-radius:6px;width:220px;">
+        </div>
+        <div>
+            <label style="font-size:0.8em;color:var(--text-muted);display:block;margin-bottom:3px;">Platform</label>
+            <input type="text" name="platform" placeholder="PC, PS5, Switch…"
+                   style="padding:7px 10px;border:1px solid var(--border);border-radius:6px;width:140px;">
+        </div>
+        <button type="submit" class="btn btn-primary">Add</button>
+    </form>
+</div>
+
+{% if games %}
+<div class="media-grid">
+    {% for game in games %}
+    <div class="media-card">
+        {% if game.cover_url %}
+            <img src="{{ game.cover_url }}" alt="Cover">
+        {% else %}
+            <div class="media-card-placeholder">🎮</div>
+        {% endif %}
+        <strong>{{ game.title }}</strong>
+        <span style="display:block;color:var(--text-muted);font-size:0.85em;">{{ game.platform or '—' }}</span>
+        <div class="card-actions">
+            <a href="/set_playing_game/{{ game.id }}" class="btn btn-primary btn-sm">Play</a>
+            <a href="/delete_game/{{ game.id }}" class="btn btn-danger btn-sm">✕</a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+    <div class="empty-icon">🎮</div>
+    <p>Your game backlog is empty.<br>Search or add a game manually above.</p>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<style>.hidden { display: none; }</style>
+{% endblock %}
