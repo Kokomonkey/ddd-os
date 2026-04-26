@@ -1,0 +1,447 @@
+{% extends "base.html" %}
+{% block title %}Design Diary{% endblock %}
+
+{% block head %}
+<style>
+.diary-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+    gap: 12px;
+}
+.week-label { font-size: 0.9em; color: var(--text-muted); font-weight: 600; }
+
+.day-card {
+    background: var(--card-bg);
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    margin-bottom: 12px;
+    overflow: hidden;
+    border-left: 4px solid var(--border);
+}
+.day-card.today { border-left-color: var(--blue); }
+.day-card.has-data { border-left-color: var(--green); }
+.day-card.today { border-left-color: var(--blue); }
+
+.day-card-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 20px;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s;
+}
+.day-card-header:hover { background: var(--bg); }
+
+.day-badge { font-weight: 700; font-size: 0.95em; min-width: 90px; }
+.day-date-label { color: var(--text-muted); font-size: 0.85em; }
+.today-badge {
+    font-size: 0.7em;
+    background: var(--blue);
+    color: white;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-weight: 600;
+}
+
+.metric-dots { display: flex; gap: 4px; margin-left: auto; margin-right: 4px; }
+.metric-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); }
+.metric-dot.filled { background: var(--blue); }
+
+.img-count { font-size: 0.75em; color: var(--text-muted); }
+
+.toggle-arrow { color: var(--text-muted); font-size: 0.75em; transition: transform 0.2s; }
+.toggle-arrow.open { transform: rotate(180deg); }
+
+.day-card-body { padding: 0 20px 20px; display: none; }
+.day-card-body.open { display: block; }
+
+.section-divider {
+    font-size: 0.72em;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+    font-weight: 700;
+    margin: 18px 0 12px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+}
+
+/* Metrics */
+.metrics-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px 28px;
+}
+@media (max-width: 768px) { .metrics-grid { grid-template-columns: 1fr; } }
+
+.metric-item > label {
+    font-size: 0.82em;
+    font-weight: 600;
+    color: var(--text);
+    display: block;
+    margin-bottom: 6px;
+}
+
+.rating-row { display: flex; align-items: center; gap: 4px; }
+.scale-label { font-size: 0.68em; color: var(--text-muted); min-width: 44px; }
+.scale-label.right { text-align: right; }
+
+.rating-btn input[type="radio"] { display: none; }
+.rating-btn span {
+    display: inline-block;
+    width: 30px;
+    height: 30px;
+    line-height: 28px;
+    text-align: center;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 0.82em;
+    cursor: pointer;
+    transition: all 0.1s;
+    font-weight: 600;
+    color: var(--text-muted);
+}
+.rating-btn span:hover { border-color: var(--blue); color: var(--blue); }
+.rating-btn input[type="radio"]:checked + span {
+    background: var(--blue);
+    color: white;
+    border-color: var(--blue);
+}
+
+.notes-area { margin-top: 14px; }
+.notes-area > label { font-size: 0.82em; font-weight: 600; display: block; margin-bottom: 6px; }
+.notes-area textarea {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 0.85em;
+    font-family: inherit;
+    resize: vertical;
+    min-height: 60px;
+    outline: none;
+    transition: border-color 0.15s;
+}
+.notes-area textarea:focus { border-color: var(--blue); }
+
+/* Images */
+.image-gallery { display: flex; flex-direction: column; gap: 14px; margin-bottom: 16px; }
+
+.image-entry {
+    display: grid;
+    grid-template-columns: 170px 1fr;
+    gap: 16px;
+    background: var(--bg);
+    border-radius: 10px;
+    padding: 14px;
+    align-items: start;
+}
+@media (max-width: 768px) { .image-entry { grid-template-columns: 1fr; } }
+
+.image-entry .thumb {
+    width: 170px;
+    height: 130px;
+    object-fit: cover;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: opacity 0.15s;
+}
+.image-entry .thumb:hover { opacity: 0.85; }
+
+.image-meta-form { display: flex; flex-direction: column; gap: 8px; }
+
+.meta-field > label {
+    font-size: 0.72em;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 700;
+    color: var(--text-muted);
+    display: block;
+    margin-bottom: 3px;
+}
+.meta-field input, .meta-field textarea {
+    width: 100%;
+    padding: 7px 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 0.83em;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.15s;
+}
+.meta-field input:focus, .meta-field textarea:focus { border-color: var(--blue); }
+.meta-field textarea { resize: vertical; min-height: 48px; }
+
+.image-actions { display: flex; gap: 6px; margin-top: 4px; flex-wrap: wrap; }
+
+/* Upload */
+.upload-zone-wrapper {
+    background: var(--bg);
+    border-radius: 10px;
+    padding: 14px;
+    border: 2px dashed var(--border);
+    transition: border-color 0.15s;
+}
+.upload-zone-wrapper:focus-within { border-color: var(--blue); }
+
+.upload-click-area {
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+    cursor: pointer;
+    background: white;
+    margin-bottom: 12px;
+    transition: background 0.15s;
+    min-height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 6px;
+    border: 1px solid var(--border);
+}
+.upload-click-area:hover { background: #f0f7ff; }
+.upload-icon { font-size: 1.6em; }
+.upload-text { font-size: 0.82em; color: var(--text-muted); }
+
+.meta-fields-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+@media (max-width: 768px) { .meta-fields-row { grid-template-columns: 1fr; } }
+
+/* Lightbox */
+.lightbox {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.88);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+}
+.lightbox.open { display: flex; }
+.lightbox img { max-width: 90vw; max-height: 90vh; border-radius: 8px; object-fit: contain; }
+.lightbox-close {
+    position: absolute;
+    top: 18px; right: 24px;
+    color: white;
+    font-size: 2em;
+    cursor: pointer;
+    line-height: 1;
+    opacity: 0.8;
+}
+.lightbox-close:hover { opacity: 1; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="diary-header">
+    <div>
+        <h1 style="font-size:1.5em; font-weight:700;">Design Diary</h1>
+        <p style="color:var(--text-muted); font-size:0.9em; margin-top:2px;">IOP2 — Crematorium Lansingerland</p>
+    </div>
+    <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+        <a href="{{ url_for('diary_page', date=prev_week) }}" class="btn btn-ghost btn-sm">← Prev</a>
+        <span class="week-label">{{ week_dates[0].strftime('%b %d') }} – {{ week_dates[-1].strftime('%b %d, %Y') }}</span>
+        <a href="{{ url_for('diary_page', date=next_week) }}" class="btn btn-ghost btn-sm">Next →</a>
+        <a href="{{ url_for('diary_page', date=current_week) }}" class="btn btn-primary btn-sm">Today</a>
+    </div>
+</div>
+
+{% for d in week_dates %}
+{% set entry = entries.get(d) %}
+{% set day_images = images_by_date.get(d, []) %}
+{% set is_today = d == today %}
+{% set has_data = entry is not none or day_images|length > 0 %}
+{% set expanded = is_today or has_data %}
+
+<div class="day-card {% if is_today %}today{% elif has_data %}has-data{% endif %}" id="day-{{ d.isoformat() }}">
+
+    <div class="day-card-header" onclick="toggleDay('{{ d.isoformat() }}')">
+        <span class="day-badge">{{ d.strftime('%A') }}</span>
+        <span class="day-date-label">{{ d.strftime('%B %d') }}</span>
+        {% if is_today %}<span class="today-badge">Today</span>{% endif %}
+
+        {% if entry %}
+        <div class="metric-dots" title="Reflections saved">
+            {% for f in ['felt_pressure','workload','direction_clarity','design_vision','design_satisfaction'] %}
+            <div class="metric-dot {% if entry[f] %}filled{% endif %}"></div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div style="margin-left:auto;"></div>
+        {% endif %}
+
+        {% if day_images %}
+        <span class="img-count">{{ day_images|length }} img</span>
+        {% endif %}
+        <span class="toggle-arrow {% if expanded %}open{% endif %}">▼</span>
+    </div>
+
+    <div class="day-card-body {% if expanded %}open{% endif %}">
+
+        <!-- Reflections form -->
+        <div class="section-divider">Reflections</div>
+        <form action="{{ url_for('save_diary_entry', date_str=d.isoformat()) }}" method="POST">
+            <div class="metrics-grid">
+                {% set metrics = [
+                    ('felt_pressure',      'Felt Pressure',   'Relaxed',  'Overwhelmed'),
+                    ('workload',           'Actual Workload', 'Light',    'Heavy'),
+                    ('direction_clarity',  'Path Clarity',    'Lost',     'Crystal clear'),
+                    ('design_vision',      'Design Vision',   'Blurry',   'Vivid'),
+                    ('design_satisfaction','Satisfaction',    'Frustrated','Delighted'),
+                ] %}
+                {% for field, label, lo, hi in metrics %}
+                <div class="metric-item">
+                    <label>{{ label }}</label>
+                    <div class="rating-row">
+                        <span class="scale-label">{{ lo }}</span>
+                        {% for i in range(1, 6) %}
+                        <label class="rating-btn">
+                            <input type="radio" name="{{ field }}" value="{{ i }}"
+                                {% if entry and entry[field] == i %}checked{% endif %}>
+                            <span>{{ i }}</span>
+                        </label>
+                        {% endfor %}
+                        <span class="scale-label right">{{ hi }}</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="notes-area">
+                <label>Notes</label>
+                <textarea name="notes" placeholder="Thoughts, observations, intentions for today...">{{ entry.notes if entry and entry.notes else '' }}</textarea>
+            </div>
+            <button type="submit" class="btn btn-primary btn-sm" style="margin-top:12px;">Save Reflections</button>
+        </form>
+
+        <!-- Image gallery -->
+        <div class="section-divider">Design Images</div>
+
+        {% if day_images %}
+        <div class="image-gallery">
+            {% for img in day_images %}
+            <div class="image-entry">
+                <img class="thumb"
+                     src="{{ url_for('static', filename='diary_uploads/' + img.filename) }}"
+                     onclick="openLightbox(this.src)"
+                     title="Click to enlarge">
+                <div>
+                    <form action="{{ url_for('update_diary_image', id=img.id) }}" method="POST" class="image-meta-form">
+                        <div class="meta-field">
+                            <label>Method</label>
+                            <input type="text" name="method" value="{{ img.method or '' }}"
+                                   placeholder="e.g. Sketch, Physical model, Diagram...">
+                        </div>
+                        <div class="meta-field">
+                            <label>Intent — What question did you want to answer?</label>
+                            <textarea name="intent" rows="2"
+                                      placeholder="What were you trying to figure out?">{{ img.intent or '' }}</textarea>
+                        </div>
+                        <div class="meta-field">
+                            <label>Insight — What did you learn?</label>
+                            <textarea name="insight" rows="2"
+                                      placeholder="What did you discover or conclude?">{{ img.insight or '' }}</textarea>
+                        </div>
+                        <div class="image-actions">
+                            <button type="submit" class="btn btn-success btn-sm">Save</button>
+                            <a href="{{ url_for('delete_diary_image', id=img.id) }}"
+                               class="btn btn-danger btn-sm"
+                               onclick="return confirm('Delete this image?')">Delete</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Upload new image -->
+        <form action="{{ url_for('upload_diary_image', date_str=d.isoformat()) }}"
+              method="POST" enctype="multipart/form-data">
+            <div class="upload-zone-wrapper">
+                <div class="upload-click-area"
+                     onclick="document.getElementById('file-{{ d.isoformat() }}').click()">
+                    <input type="file" name="image" id="file-{{ d.isoformat() }}"
+                           accept="image/*" style="display:none"
+                           onchange="previewFile(this, '{{ d.isoformat() }}')">
+                    <img id="preview-{{ d.isoformat() }}"
+                         style="display:none; max-width:100%; max-height:160px; border-radius:6px; object-fit:contain;">
+                    <div id="placeholder-{{ d.isoformat() }}">
+                        <div class="upload-icon">＋</div>
+                        <div class="upload-text">Click to upload a design image</div>
+                    </div>
+                </div>
+                <div class="meta-fields-row">
+                    <div class="meta-field">
+                        <label>Method</label>
+                        <input type="text" name="method" placeholder="e.g. Sketch, Model...">
+                    </div>
+                    <div class="meta-field">
+                        <label>Intent</label>
+                        <input type="text" name="intent" placeholder="What did you want to answer?">
+                    </div>
+                    <div class="meta-field">
+                        <label>Insight</label>
+                        <input type="text" name="insight" placeholder="What did you learn?">
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary btn-sm">Upload Image</button>
+            </div>
+        </form>
+
+    </div>
+</div>
+{% endfor %}
+
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+    <span class="lightbox-close">×</span>
+    <img id="lightbox-img" src="" alt="" onclick="event.stopPropagation()">
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function toggleDay(dateStr) {
+    const card = document.getElementById('day-' + dateStr);
+    card.querySelector('.day-card-body').classList.toggle('open');
+    card.querySelector('.toggle-arrow').classList.toggle('open');
+}
+
+function previewFile(input, dateStr) {
+    if (!input.files || !input.files[0]) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+        const preview = document.getElementById('preview-' + dateStr);
+        const placeholder = document.getElementById('placeholder-' + dateStr);
+        preview.src = e.target.result;
+        preview.style.display = 'block';
+        placeholder.style.display = 'none';
+    };
+    reader.readAsDataURL(input.files[0]);
+}
+
+function openLightbox(src) {
+    document.getElementById('lightbox-img').src = src;
+    document.getElementById('lightbox').classList.add('open');
+}
+
+function closeLightbox() {
+    document.getElementById('lightbox').classList.remove('open');
+}
+
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeLightbox();
+});
+</script>
+{% endblock %}

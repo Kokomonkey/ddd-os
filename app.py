@@ -1,14 +1,20 @@
 import os
+import uuid
 import requests
 import random
 from flask import Flask, render_template, request, redirect, url_for, make_response, send_from_directory
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timedelta, date
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-ddd-os')
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///ddd_os.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
+
+UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), 'static', 'diary_uploads')
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 db = SQLAlchemy(app)
 
@@ -98,6 +104,24 @@ class HabitLog(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     habit_id = db.Column(db.Integer, db.ForeignKey('habit.id'), nullable=False)
     date = db.Column(db.Date, nullable=False)
+
+class DiaryEntry(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    date = db.Column(db.Date, nullable=False, unique=True)
+    felt_pressure = db.Column(db.Integer, nullable=True)
+    workload = db.Column(db.Integer, nullable=True)
+    direction_clarity = db.Column(db.Integer, nullable=True)
+    design_vision = db.Column(db.Integer, nullable=True)
+    design_satisfaction = db.Column(db.Integer, nullable=True)
+    notes = db.Column(db.Text, nullable=True)
+
+class DiaryImage(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    date = db.Column(db.Date, nullable=False)
+    filename = db.Column(db.String(300), nullable=False)
+    method = db.Column(db.String(200), nullable=True)
+    intent = db.Column(db.Text, nullable=True)
+    insight = db.Column(db.Text, nullable=True)
 
 
 # ── XP / LEVEL SYSTEM ──────────────────────────────────────────────────────
@@ -634,6 +658,83 @@ def delete_habit(id):
     db.session.delete(Habit.query.get_or_404(id))
     db.session.commit()
     return redirect(url_for('habits_page'))
+
+
+# ── DESIGN DIARY ────────────────────────────────────────────────────────────
+
+@app.route('/diary')
+def diary_page():
+    date_str = request.args.get('date')
+    target_date = datetime.strptime(date_str, '%Y-%m-%d').date() if date_str else date.today()
+    start_of_week = target_date - timedelta(days=target_date.weekday())
+    week_dates = [start_of_week + timedelta(days=i) for i in range(7)]
+    entries = {e.date: e for e in DiaryEntry.query.filter(
+        DiaryEntry.date >= start_of_week, DiaryEntry.date <= week_dates[-1]).all()}
+    images_by_date = {}
+    for img in DiaryImage.query.filter(
+        DiaryImage.date >= start_of_week, DiaryImage.date <= week_dates[-1]).all():
+        images_by_date.setdefault(img.date, []).append(img)
+    prev_week = (start_of_week - timedelta(days=7)).strftime('%Y-%m-%d')
+    next_week = (start_of_week + timedelta(days=7)).strftime('%Y-%m-%d')
+    return render_template('diary.html', week_dates=week_dates, entries=entries,
+                           images_by_date=images_by_date, prev_week=prev_week,
+                           next_week=next_week, current_week=date.today().strftime('%Y-%m-%d'),
+                           today=date.today(), active='diary')
+
+@app.route('/diary/save/<date_str>', methods=['POST'])
+def save_diary_entry(date_str):
+    d = datetime.strptime(date_str, '%Y-%m-%d').date()
+    entry = DiaryEntry.query.filter_by(date=d).first()
+    if not entry:
+        entry = DiaryEntry(date=d)
+        db.session.add(entry)
+    def gi(k):
+        v = request.form.get(k)
+        return int(v) if v and v.isdigit() else None
+    entry.felt_pressure = gi('felt_pressure')
+    entry.workload = gi('workload')
+    entry.direction_clarity = gi('direction_clarity')
+    entry.design_vision = gi('design_vision')
+    entry.design_satisfaction = gi('design_satisfaction')
+    entry.notes = request.form.get('notes', '')
+    db.session.commit()
+    return redirect(url_for('diary_page', date=date_str) + '#day-' + date_str)
+
+@app.route('/diary/upload/<date_str>', methods=['POST'])
+def upload_diary_image(date_str):
+    d = datetime.strptime(date_str, '%Y-%m-%d').date()
+    f = request.files.get('image')
+    if f and f.filename:
+        ext = os.path.splitext(secure_filename(f.filename))[1].lower()
+        filename = f"{date_str}_{uuid.uuid4().hex[:8]}{ext}"
+        f.save(os.path.join(UPLOAD_FOLDER, filename))
+        db.session.add(DiaryImage(
+            date=d, filename=filename,
+            method=request.form.get('method', ''),
+            intent=request.form.get('intent', ''),
+            insight=request.form.get('insight', ''),
+        ))
+        db.session.commit()
+    return redirect(url_for('diary_page', date=date_str) + '#day-' + date_str)
+
+@app.route('/diary/image/update/<int:id>', methods=['POST'])
+def update_diary_image(id):
+    img = DiaryImage.query.get_or_404(id)
+    img.method = request.form.get('method', '')
+    img.intent = request.form.get('intent', '')
+    img.insight = request.form.get('insight', '')
+    db.session.commit()
+    return redirect(request.referrer or url_for('diary_page'))
+
+@app.route('/diary/image/delete/<int:id>')
+def delete_diary_image(id):
+    img = DiaryImage.query.get_or_404(id)
+    path = os.path.join(UPLOAD_FOLDER, img.filename)
+    if os.path.exists(path):
+        os.remove(path)
+    db.session.delete(img)
+    db.session.commit()
+    return redirect(request.referrer or url_for('diary_page'))
 
 
 # ── SPIN ───────────────────────────────────────────────────────────────────
