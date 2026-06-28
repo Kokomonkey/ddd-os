@@ -3,87 +3,128 @@
 
 {% block head %}
 <style>
-    .stats-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-        gap: 14px;
-        margin-bottom: 28px;
-    }
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 14px;
+    margin-bottom: 28px;
+}
+.stat-card {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 18px 16px;
+    text-align: center;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border);
+    border-top: 4px solid var(--accent, var(--primary));
+}
+.stat-number { font-size: 2em; font-weight: 800; color: var(--primary-dark); line-height: 1; margin-bottom: 6px; }
+.stat-label { font-size: 0.72em; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
+.stat-sub { font-size: 0.78em; color: var(--text-muted); margin-top: 6px; }
 
-    .stat-card {
-        background: var(--card-bg);
-        border-radius: 12px;
-        padding: 20px 16px;
-        text-align: center;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-    }
+.section-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+    margin-bottom: 22px;
+}
+@media (max-width: 900px) { .section-grid { grid-template-columns: 1fr; } }
 
-    .stat-number { font-size: 2.4em; font-weight: 800; color: var(--blue); line-height: 1; margin-bottom: 6px; }
-    .stat-label { font-size: 0.75em; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+.stats-card {
+    background: var(--card-bg);
+    border-radius: 14px;
+    padding: 22px;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-sm);
+}
+.stats-card h3 { font-size: 1.05em; margin-bottom: 14px; color: var(--primary-dark); }
 
-    /* Category bars */
-    .cat-bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 9px; }
-    .cat-bar-label { width: 140px; font-size: 0.82em; color: var(--text); text-align: right; flex-shrink: 0; }
-    .cat-bar-track { flex: 1; background: var(--bg); border-radius: 4px; height: 10px; overflow: hidden; }
-    .cat-bar-fill { height: 100%; background: var(--blue); border-radius: 4px; transition: width 0.5s ease; }
-    .cat-bar-val { font-size: 0.8em; font-weight: 600; width: 44px; color: var(--text-muted); }
+.bar-row { display: grid; grid-template-columns: 130px 1fr 60px; gap: 10px; align-items: center; margin-bottom: 9px; }
+.bar-row .lbl { font-size: 0.85em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bar-row .track { background: var(--bg-alt); border-radius: 5px; height: 10px; overflow: hidden; }
+.bar-row .fill { height: 100%; background: linear-gradient(90deg, var(--primary), var(--primary-dark)); border-radius: 5px; }
+.bar-row .val { font-size: 0.78em; color: var(--text-muted); text-align: right; }
 
-    /* Heatmap */
-    .heatmap { display: flex; flex-wrap: wrap; gap: 3px; }
-    .hm-cell {
-        width: 22px;
-        height: 22px;
-        border-radius: 4px;
-        position: relative;
-        cursor: default;
-    }
+/* Heatmap */
+.heatmap {
+    display: grid;
+    grid-template-columns: repeat(15, 1fr);
+    gap: 4px;
+    margin-top: 12px;
+}
+.heatmap-90 {
+    grid-template-columns: repeat(15, 1fr);
+}
+.heatmap-cell {
+    aspect-ratio: 1 / 1;
+    border-radius: 3px;
+    background: var(--bg-alt);
+    position: relative;
+    cursor: default;
+}
+.heatmap-cell.i1 { background: #f3e3c8; }
+.heatmap-cell.i2 { background: #e6b85a; }
+.heatmap-cell.i3 { background: #d4a373; }
+.heatmap-cell.i4 { background: #9c6644; }
+.heatmap-cell:hover::after {
+    content: attr(data-tip);
+    position: absolute;
+    bottom: 110%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--text);
+    color: white;
+    font-size: 0.7em;
+    padding: 4px 8px;
+    border-radius: 5px;
+    white-space: nowrap;
+    z-index: 10;
+}
 
-    .hm-cell[data-intensity="0"] { background: var(--bg); border: 1px solid var(--border); }
-    .hm-cell[data-intensity="1"] { background: #bfdbfe; }
-    .hm-cell[data-intensity="2"] { background: #60a5fa; }
-    .hm-cell[data-intensity="3"] { background: #2563eb; }
-    .hm-cell[data-intensity="4"] { background: #1e3a8a; }
+.priority-bar {
+    background: var(--card-warm);
+    border-radius: 10px;
+    padding: 12px 14px;
+    border-left: 4px solid var(--p-color, var(--primary));
+    margin-bottom: 8px;
+    display: grid;
+    grid-template-columns: 30px 1fr 80px 50px;
+    gap: 12px;
+    align-items: center;
+}
+.priority-bar .icn { font-size: 1.3em; text-align: center; }
+.priority-bar .nm { font-weight: 600; font-size: 0.9em; }
+.priority-bar .progress-mini { background: var(--bg-alt); border-radius: 4px; height: 8px; overflow: hidden; }
+.priority-bar .progress-mini .fill { height: 100%; background: var(--p-color, var(--primary)); border-radius: 4px; }
+.priority-bar .pct { font-size: 0.78em; color: var(--text-muted); text-align: right; font-weight: 600; }
 
-    .hm-cell:hover::after {
-        content: attr(data-label);
-        position: absolute;
-        bottom: 28px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: rgba(0,0,0,0.78);
-        color: white;
-        padding: 3px 8px;
-        border-radius: 4px;
-        font-size: 0.68em;
-        white-space: nowrap;
-        pointer-events: none;
-        z-index: 20;
-    }
+.series-row {
+    display: grid;
+    grid-template-columns: 130px 1fr 70px;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 8px;
+}
+.series-row .nm { font-size: 0.85em; font-weight: 600; }
+.series-row .track { background: var(--bg-alt); border-radius: 5px; height: 8px; overflow: hidden; }
+.series-row .fill { height: 100%; background: linear-gradient(90deg, #d4a373, #9c6644); border-radius: 5px; }
+.series-row .frac { font-size: 0.78em; color: var(--text-muted); text-align: right; }
 
-    .heatmap-legend {
-        display: flex;
-        gap: 5px;
-        align-items: center;
-        margin-top: 10px;
-        font-size: 0.75em;
-        color: var(--text-muted);
-    }
+.streak-card {
+    background: linear-gradient(135deg, #fff3e0, #ffe8c4);
+    border-radius: 14px;
+    padding: 22px;
+    text-align: center;
+    border: 1px solid var(--orange);
+    border-style: dashed;
+}
+.streak-card .big-num { font-size: 3em; font-weight: 800; color: var(--orange); line-height: 1; }
+.streak-card .sub { font-size: 0.85em; color: var(--text-muted); margin-top: 6px; }
+.streak-card .longest { font-size: 0.78em; color: var(--text-muted); margin-top: 8px; }
 
-    .hm-legend-cell { width: 14px; height: 14px; border-radius: 3px; }
-
-    /* Habit streaks */
-    .streak-row {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 11px 0;
-        border-bottom: 1px solid var(--border);
-    }
-    .streak-row:last-child { border-bottom: none; }
-    .streak-icon { font-size: 1.4em; flex-shrink: 0; }
-    .streak-name { flex: 1; font-weight: 600; font-size: 0.9em; }
-    .streak-val { font-size: 0.85em; font-weight: 700; color: var(--orange); }
-    .streak-none { font-size: 0.8em; color: var(--text-muted); }
+.habit-list { display: flex; flex-direction: column; gap: 6px; }
+.habit-row { display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: var(--bg-alt); border-radius: 8px; font-size: 0.88em; }
+.habit-row .streak-num { margin-left: auto; font-weight: 700; color: var(--orange); }
 </style>
 {% endblock %}
 
@@ -91,95 +132,143 @@
 <div class="page-header">
     <div>
         <h1>📊 Stats</h1>
-        <p>Your activity at a glance</p>
+        <p>The numbers behind your week.</p>
     </div>
 </div>
 
-<!-- Library overview -->
-<p class="section-title">Library</p>
+{# Top-level KPI tiles #}
 <div class="stats-grid">
-    <div class="stat-card">
-        <div class="stat-number">{{ books_total }}</div>
-        <div class="stat-label">📚 Books</div>
+    <div class="stat-card" style="--accent: #c1432e;">
+        <div class="stat-number">{{ current_streak }}</div>
+        <div class="stat-label">🔥 Current streak</div>
+        <div class="stat-sub">Longest: {{ longest_streak }}d</div>
     </div>
-    <div class="stat-card">
-        <div class="stat-number">{{ manga_total }}</div>
-        <div class="stat-label">📖 Manga</div>
+    <div class="stat-card" style="--accent: #d4a373;">
+        <div class="stat-number">{{ books_finished }}/{{ books_total }}</div>
+        <div class="stat-label">📚 Books read</div>
+        <div class="stat-sub">{{ total_pages_read }} pages total</div>
     </div>
-    <div class="stat-card">
-        <div class="stat-number">{{ anime_total }}</div>
-        <div class="stat-label">🎬 Anime</div>
+    <div class="stat-card" style="--accent: #6b8e9e;">
+        <div class="stat-number">{{ movie_watched }}/{{ movie_total }}</div>
+        <div class="stat-label">🎬 Movies</div>
     </div>
-    <div class="stat-card">
-        <div class="stat-number">{{ total_skill_hours }}</div>
-        <div class="stat-label">⏱ Skill Hours</div>
+    <div class="stat-card" style="--accent: #7a9b76;">
+        <div class="stat-number">{{ total_plays }}</div>
+        <div class="stat-label">🎲 Boardgame plays</div>
+        <div class="stat-sub">{{ boardgame_total }} in collection</div>
+    </div>
+    <div class="stat-card" style="--accent: #e6b85a;">
+        <div class="stat-number">{{ rewards_month }}</div>
+        <div class="stat-label">🎁 Rewards this month</div>
+        <div class="stat-sub">{{ rewards_all }} all-time</div>
+    </div>
+    <div class="stat-card" style="--accent: #9c6644;">
+        <div class="stat-number">{{ mood_30_avg or '—' }}</div>
+        <div class="stat-label">😊 Mood 30d</div>
+        <div class="stat-sub">⚡ Energy: {{ energy_30_avg or '—' }}</div>
     </div>
 </div>
 
-<!-- Skill hours by category -->
-<p class="section-title">Skill Hours by Category</p>
-<div class="card" style="margin-bottom:28px;">
-    {% if category_hours %}
-        {% set max_hrs = category_hours.values() | max %}
-        {% for cat, hrs in category_hours.items() %}
-        <div class="cat-bar-row">
-            <div class="cat-bar-label">{{ cat }}</div>
-            <div class="cat-bar-track">
-                <div class="cat-bar-fill"
-                     style="width:{{ ((hrs / max_hrs) * 100) if max_hrs > 0 else 0 }}%;"></div>
+<div class="section-grid">
+    {# Project priority breakdown #}
+    <div class="stats-card">
+        <h3>🎯 Projects by priority</h3>
+        {% for key in priority_order %}
+        {% set info = priority_info[key] %}
+        {% set b = priority_breakdown[key] %}
+        <div class="priority-bar" style="--p-color: {{ info.color }};">
+            <span class="icn">{{ info.icon }}</span>
+            <div>
+                <div class="nm">{{ info.label }}</div>
+                <div class="progress-mini" style="margin-top: 4px;">
+                    <div class="fill" style="width: {{ b.pct }}%;"></div>
+                </div>
             </div>
-            <div class="cat-bar-val">{{ hrs }}h</div>
-        </div>
-        {% endfor %}
-    {% else %}
-        <p style="color:var(--text-muted);font-size:0.9em;">No skill sessions logged yet.</p>
-    {% endif %}
-    {% if top_skill %}
-    <p style="font-size:0.82em;color:var(--text-muted);margin-top:14px;padding-top:12px;border-top:1px solid var(--border);">
-        ⭐ Most practiced: <strong>{{ top_skill.name }}</strong>
-        ({{ top_skill.total_minutes // 60 }}h {{ top_skill.total_minutes % 60 }}m)
-    </p>
-    {% endif %}
-</div>
-
-<!-- 30-day activity heatmap -->
-<p class="section-title">Skill Activity — Last 30 Days</p>
-<div class="card" style="margin-bottom:28px;">
-    <div class="heatmap">
-        {% for cell in heatmap %}
-        <div class="hm-cell"
-             data-intensity="{{ cell.intensity }}"
-             data-label="{{ cell.date.strftime('%b %d') }}{% if cell.mins > 0 %} · {{ cell.mins }} min{% endif %}">
+            <div style="font-size: 0.8em; color: var(--text-muted);">{{ b.done }} / {{ b.total }} done</div>
+            <div class="pct">{{ b.pct }}%</div>
         </div>
         {% endfor %}
     </div>
-    <div class="heatmap-legend">
+
+    {# Streak card + habits #}
+    <div>
+        <div class="streak-card" style="margin-bottom: 18px;">
+            <div class="big-num">{{ current_streak }}🔥</div>
+            <div class="sub">{% if current_streak > 0 %}days in a row with at least one task done{% else %}Start a streak today — finish one task.{% endif %}</div>
+            <div class="longest">Personal best: <strong>{{ longest_streak }}</strong> days</div>
+        </div>
+        <div class="stats-card">
+            <h3>✅ Habit streaks</h3>
+            {% if habit_streaks %}
+            <div class="habit-list">
+                {% for h in habit_streaks[:6] %}
+                <div class="habit-row">
+                    <span>{{ h.icon }}</span>
+                    <span>{{ h.name }}</span>
+                    <span class="streak-num">{{ h.streak }}🔥</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div style="color: var(--text-muted); font-style: italic; text-align: center; padding: 12px;">No habits tracked yet.</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{# Productivity heatmap #}
+<div class="stats-card" style="margin-bottom: 22px;">
+    <h3>📅 Productivity heatmap <span style="font-size: 0.65em; color: var(--text-muted); font-weight: 400;">— task completions, last 90 days</span></h3>
+    <div class="heatmap heatmap-90">
+        {% for cell in productivity_heatmap %}
+        <div class="heatmap-cell i{{ cell.intensity }}"
+             data-tip="{{ cell.date.strftime('%b %d') }}: {{ cell.count }} done"></div>
+        {% endfor %}
+    </div>
+    <div style="display: flex; align-items: center; gap: 8px; justify-content: flex-end; font-size: 0.75em; color: var(--text-muted); margin-top: 10px;">
         Less
-        <div class="hm-legend-cell" data-intensity="0"
-             style="background:var(--bg);border:1px solid var(--border);"></div>
-        <div class="hm-legend-cell" style="background:#bfdbfe;"></div>
-        <div class="hm-legend-cell" style="background:#60a5fa;"></div>
-        <div class="hm-legend-cell" style="background:#2563eb;"></div>
-        <div class="hm-legend-cell" style="background:#1e3a8a;"></div>
+        <div class="heatmap-cell i0" style="width: 12px; height: 12px;"></div>
+        <div class="heatmap-cell i1" style="width: 12px; height: 12px;"></div>
+        <div class="heatmap-cell i2" style="width: 12px; height: 12px;"></div>
+        <div class="heatmap-cell i3" style="width: 12px; height: 12px;"></div>
+        <div class="heatmap-cell i4" style="width: 12px; height: 12px;"></div>
         More
     </div>
 </div>
 
-<!-- Habit streaks -->
-{% if habit_streaks %}
-<p class="section-title">Habit Streaks</p>
-<div class="card">
-    {% for hs in habit_streaks %}
-    <div class="streak-row">
-        <div class="streak-icon">{{ hs.icon }}</div>
-        <div class="streak-name">{{ hs.name }}</div>
-        {% if hs.streak > 0 %}
-            <div class="streak-val">🔥 {{ hs.streak }} days</div>
-        {% else %}
-            <div class="streak-none">No streak</div>
+<div class="section-grid">
+    {# Series coverage #}
+    {% if series_coverage %}
+    <div class="stats-card">
+        <h3>📚 Library coverage</h3>
+        {% for series_name, s in series_coverage.items() %}
+        <div class="series-row">
+            <div class="nm">{{ series_name }}</div>
+            <div class="track"><div class="fill" style="width: {{ s.pct }}%;"></div></div>
+            <div class="frac">{{ s.finished }}/{{ s.total }}</div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {# Skill categories (kept from before) #}
+    {% if category_hours %}
+    <div class="stats-card">
+        <h3>🎯 Skill hours by category</h3>
+        {% set max_h = (category_hours.values()|list|first) or 1 %}
+        {% for cat, h in category_hours.items() %}
+        <div class="bar-row">
+            <div class="lbl">{{ cat }}</div>
+            <div class="track"><div class="fill" style="width: {{ (h / max_h * 100)|round|int }}%;"></div></div>
+            <div class="val">{{ h }}h</div>
+        </div>
+        {% endfor %}
+        {% if top_skill %}
+        <div style="margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); font-size: 0.85em; color: var(--text-muted);">
+            🏆 Top skill: <strong>{{ top_skill.name }}</strong> ({{ (top_skill.total_minutes / 60)|round(1) }}h)
+        </div>
         {% endif %}
     </div>
-    {% endfor %}
+    {% endif %}
 </div>
-{% endif %}
 {% endblock %}

@@ -1,0 +1,802 @@
+{% extends 'base.html' %}
+{% block title %}Library{% endblock %}
+
+{% block head %}
+<style>
+    .lib-tabs {
+        display: flex;
+        gap: 4px;
+        margin-bottom: 22px;
+        border-bottom: 2px solid var(--border);
+        padding-bottom: 0;
+        overflow-x: auto;
+    }
+    .lib-tab {
+        padding: 10px 18px;
+        text-decoration: none;
+        color: var(--text-muted);
+        font-weight: 600;
+        font-size: 0.92em;
+        border-bottom: 3px solid transparent;
+        margin-bottom: -2px;
+        white-space: nowrap;
+        transition: all 0.15s;
+    }
+    .lib-tab:hover { color: var(--primary-dark); }
+    .lib-tab.active {
+        color: var(--primary-dark);
+        border-bottom-color: var(--primary);
+    }
+
+    .lib-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        gap: 14px;
+    }
+    .lib-card {
+        background: var(--card-bg);
+        border-radius: 12px;
+        padding: 12px;
+        border: 1px solid var(--border);
+        box-shadow: var(--shadow-sm);
+        transition: all 0.2s;
+    }
+    .lib-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+    .lib-card img {
+        width: 100%;
+        aspect-ratio: 2 / 3;
+        object-fit: cover;
+        border-radius: 8px;
+        margin-bottom: 8px;
+    }
+    .lib-card .lib-placeholder {
+        width: 100%;
+        aspect-ratio: 2 / 3;
+        background: linear-gradient(135deg, #f3e3c8, #e8dcc9);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.5em;
+        margin-bottom: 8px;
+    }
+    .lib-card .nm { font-weight: 600; font-size: 0.88em; line-height: 1.3; margin-bottom: 4px; }
+    .lib-card .meta { font-size: 0.75em; color: var(--text-muted); margin-bottom: 6px; }
+    .lib-card progress { width: 100%; height: 5px; }
+
+    .current-hero {
+        background: linear-gradient(135deg, #fbf1e1, #f3e3c8);
+        border-radius: 16px;
+        padding: 24px;
+        margin-bottom: 24px;
+        display: flex;
+        gap: 22px;
+        border: 1px solid var(--border);
+        box-shadow: var(--shadow-md);
+    }
+    .current-hero img {
+        width: 130px;
+        height: 195px;
+        object-fit: cover;
+        border-radius: 10px;
+        box-shadow: var(--shadow-md);
+        flex-shrink: 0;
+    }
+    .current-hero .placeholder {
+        width: 130px;
+        height: 195px;
+        background: var(--card-bg);
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 3em;
+        flex-shrink: 0;
+    }
+    .current-info { flex: 1; }
+    .current-info .lbl { font-size: 0.7em; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-muted); font-weight: 700; }
+    .current-info h3 { font-size: 1.4em; margin: 4px 0 8px; color: var(--primary-dark); }
+    .current-info .sub { color: var(--text-muted); margin-bottom: 14px; }
+    .current-info progress { width: 100%; height: 8px; margin: 10px 0; }
+
+    /* ── Animated bookcase 2.0 ─────────────────────────────── */
+    .bookcase {
+        background:
+            repeating-linear-gradient(90deg,
+                rgba(0,0,0,0.06) 0px, transparent 1px,
+                transparent 50px, rgba(0,0,0,0.06) 51px),
+            linear-gradient(180deg, #6b4226 0%, #4a2d18 100%);
+        border-radius: 14px;
+        padding: 18px 20px 8px;
+        margin-bottom: 28px;
+        box-shadow: var(--shadow-lg), inset 0 0 30px rgba(0,0,0,0.25);
+        position: relative;
+        border: 3px solid #3a200f;
+    }
+    .bookcase-stats {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        color: #e6c89a;
+        font-size: 0.82em;
+        margin-bottom: 14px;
+        padding: 0 4px;
+        font-family: Georgia, serif;
+    }
+    .bookcase-stats .title { font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
+
+    .series-section { margin-bottom: 18px; }
+    .series-label {
+        color: #f4d8a8;
+        font-size: 0.72em;
+        font-family: Georgia, serif;
+        font-style: italic;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        padding: 4px 8px;
+        margin-bottom: 4px;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+        border-bottom: 1px solid rgba(244,216,168,0.2);
+    }
+    .subseries-label {
+        color: #c9a87a;
+        font-size: 0.65em;
+        font-family: Georgia, serif;
+        padding: 6px 8px 2px;
+        opacity: 0.85;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+    }
+    .shelf {
+        background:
+            linear-gradient(180deg, transparent 88%, #2d1808 88%, #4a2d18 100%);
+        padding: 0 6px;
+        display: flex;
+        align-items: flex-end;
+        gap: 2px;
+        min-height: 150px;
+        margin-bottom: 4px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        position: relative;
+        scrollbar-width: thin;
+        scrollbar-color: #6b4226 #2d1808;
+    }
+    .shelf::after {
+        /* The shelf board */
+        content: '';
+        position: absolute;
+        bottom: 0; left: 0; right: 0;
+        height: 8px;
+        background: linear-gradient(180deg, #5a371f, #2d1808);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    }
+
+    .book-spine {
+        position: relative;
+        cursor: pointer;
+        flex-shrink: 0;
+        border-radius: 2px 2px 0 0;
+        box-shadow:
+            inset -3px 0 4px rgba(0,0,0,0.25),
+            inset 3px 0 3px rgba(255,255,255,0.15),
+            -1px 2px 4px rgba(0,0,0,0.4);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.25s cubic-bezier(.34,1.56,.64,1);
+        background: var(--spine-color, #8b5a3c);
+        animation: bookSlideIn 0.6s ease-out both;
+        animation-delay: var(--delay, 0s);
+        opacity: 0;
+        margin-bottom: 8px;
+    }
+    .book-spine:hover { transform: translateY(-10px) rotate(-1deg); z-index: 5; }
+    .book-spine::before {
+        /* Gold band at top */
+        content: '';
+        position: absolute;
+        top: 4px; left: 3px; right: 3px;
+        height: 1px;
+        background: rgba(255, 215, 130, 0.4);
+    }
+    .book-spine::after {
+        /* Gold band at bottom */
+        content: '';
+        position: absolute;
+        bottom: 4px; left: 3px; right: 3px;
+        height: 1px;
+        background: rgba(255, 215, 130, 0.4);
+    }
+    .spine-title {
+        color: #f5e8d0;
+        font-size: 0.68em;
+        font-weight: 600;
+        font-family: Georgia, serif;
+        writing-mode: vertical-rl;
+        text-orientation: mixed;
+        transform: rotate(180deg);
+        padding: 10px 0;
+        text-overflow: ellipsis;
+        overflow: hidden;
+        white-space: nowrap;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.6);
+        letter-spacing: 0.5px;
+    }
+    .book-spine.reading {
+        background: linear-gradient(180deg, var(--spine-color, #8b5a3c) 0%, #d4a373 70%, #ffd97a 100%);
+        animation: bookSlideIn 0.6s ease-out both, readingGlow 2.5s ease-in-out infinite;
+        animation-delay: var(--delay, 0s), 0.6s;
+    }
+    .book-spine.finished {
+        background: linear-gradient(135deg, #8b5a3c, var(--spine-color, #6b4226) 40%, #b89968);
+    }
+    .book-spine.finished::before,
+    .book-spine.finished::after {
+        background: linear-gradient(90deg, #ffd97a, #d4a060, #ffd97a);
+        height: 2px;
+        box-shadow: 0 0 4px rgba(255, 217, 122, 0.5);
+    }
+    .book-spine.finished .spine-title { color: #fff5d6; font-weight: 700; }
+    .book-spine.unread { opacity: 0.45; filter: grayscale(0.3); }
+
+    @keyframes bookSlideIn {
+        from { transform: translateY(-120px) rotate(-8deg); opacity: 0; }
+        to { transform: translateY(0) rotate(0); opacity: 1; }
+    }
+    @keyframes readingGlow {
+        0%, 100% { box-shadow: inset -3px 0 4px rgba(0,0,0,0.25), inset 3px 0 3px rgba(255,255,255,0.15), -1px 2px 4px rgba(0,0,0,0.4), 0 0 14px rgba(255, 217, 122, 0.45); }
+        50%      { box-shadow: inset -3px 0 4px rgba(0,0,0,0.25), inset 3px 0 3px rgba(255,255,255,0.15), -1px 2px 4px rgba(0,0,0,0.4), 0 0 24px rgba(255, 217, 122, 0.8); }
+    }
+
+    /* Book detail modal */
+    .book-modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(35, 22, 14, 0.7);
+        backdrop-filter: blur(4px);
+        z-index: 1500;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+    }
+    .book-modal-backdrop.open { display: flex; animation: fadeIn 0.2s; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .book-modal {
+        background: var(--card-bg);
+        border-radius: 16px;
+        max-width: 480px;
+        width: 100%;
+        padding: 28px;
+        box-shadow: var(--shadow-lg);
+        animation: slideUp 0.25s ease-out;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+    @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .book-modal .close-x {
+        float: right;
+        background: none; border: none;
+        font-size: 1.6em; cursor: pointer; color: var(--text-muted);
+        padding: 0; line-height: 1;
+    }
+    .book-modal-cover {
+        display: flex; gap: 18px; margin-bottom: 16px;
+    }
+    .book-modal-cover img {
+        width: 110px;
+        aspect-ratio: 2 / 3;
+        object-fit: cover;
+        border-radius: 8px;
+        box-shadow: var(--shadow-md);
+    }
+    .book-modal-cover .info h3 { margin: 0 0 4px; font-size: 1.25em; color: var(--primary-dark); }
+    .book-modal-cover .info .author { color: var(--text-muted); margin-bottom: 6px; }
+    .book-modal-cover .info .meta { font-size: 0.82em; color: var(--text-muted); margin-bottom: 8px; }
+    .book-modal-progress { margin: 16px 0; }
+    .book-modal-progress progress { width: 100%; height: 10px; margin-bottom: 6px; }
+    .book-modal-form {
+        display: flex; gap: 6px; margin-top: 12px;
+    }
+    .book-modal-form input {
+        flex: 1; padding: 9px 12px; border: 1px solid var(--border);
+        border-radius: 8px; font-size: 0.92em;
+    }
+    .book-modal-actions {
+        display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap;
+    }
+
+    .add-form {
+        background: var(--card-bg);
+        border-radius: 14px;
+        padding: 18px;
+        margin-bottom: 20px;
+        border: 1px solid var(--border);
+    }
+    .add-form-row {
+        display: grid;
+        grid-template-columns: 1fr 100px 100px 100px auto;
+        gap: 8px;
+        align-items: end;
+    }
+    .add-form input, .add-form select {
+        width: 100%; padding: 8px 10px; border: 1px solid var(--border);
+        border-radius: 7px; font-size: 0.88em; background: var(--bg);
+    }
+    .add-form label { font-size: 0.7em; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); font-weight: 600; display: block; margin-bottom: 4px; }
+
+    .lib-actions { display: flex; gap: 4px; margin-top: 6px; flex-wrap: wrap; }
+
+    .section-divider {
+        font-size: 0.78em;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        color: var(--text-muted);
+        font-weight: 700;
+        margin: 24px 0 12px;
+    }
+
+    @media (max-width: 768px) {
+        .current-hero { flex-direction: column; align-items: center; text-align: center; }
+        .add-form-row { grid-template-columns: 1fr; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>📚 Library</h1>
+        <p>Your books, films, series, board games — and everything in between.</p>
+    </div>
+</div>
+
+<div class="lib-tabs">
+    <a href="{{ url_for('library_page', tab='books') }}" class="lib-tab {% if tab == 'books' %}active{% endif %}">📚 Books</a>
+    <a href="{{ url_for('library_page', tab='movies') }}" class="lib-tab {% if tab == 'movies' %}active{% endif %}">🎬 Movies</a>
+    <a href="{{ url_for('library_page', tab='series') }}" class="lib-tab {% if tab == 'series' %}active{% endif %}">📺 Series</a>
+    <a href="{{ url_for('library_page', tab='boardgames') }}" class="lib-tab {% if tab == 'boardgames' %}active{% endif %}">🎲 Boardgames</a>
+    <a href="{{ url_for('library_page', tab='manga') }}" class="lib-tab {% if tab == 'manga' %}active{% endif %}">📖 Manga</a>
+    <a href="{{ url_for('library_page', tab='anime') }}" class="lib-tab {% if tab == 'anime' %}active{% endif %}">🍙 Anime</a>
+</div>
+
+{# ────────── BOOKS ────────── #}
+{% if tab == 'books' %}
+    {% if current %}
+    <div class="current-hero">
+        {% if current.cover_url %}
+        <img src="{{ current.cover_url }}" alt="">
+        {% else %}
+        <div class="placeholder">📖</div>
+        {% endif %}
+        <div class="current-info">
+            <div class="lbl">Now reading</div>
+            <h3>{{ current.title }}</h3>
+            <div class="sub">{{ current.author }}</div>
+            <progress value="{{ current.pages_read }}" max="{{ current.total_pages }}"></progress>
+            <div style="font-size: 0.85em; color: var(--text-muted);">
+                {{ current.pages_read }} / {{ current.total_pages }} pages ·
+                {{ ((current.pages_read / current.total_pages) * 100)|round|int }}%
+            </div>
+            <form method="POST" action="{{ url_for('update_progress', id=current.id) }}" style="display: flex; gap: 6px; margin-top: 12px;">
+                <input type="number" name="pages_read" value="{{ current.pages_read }}" min="0" max="{{ current.total_pages }}"
+                       style="width: 90px; padding: 6px 10px; border: 1px solid var(--border); border-radius: 7px;">
+                <button class="btn btn-primary btn-sm">Update</button>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+
+    {# ────── Bookcase 2.0 ────── #}
+    {% if shelves %}
+    <div style="display: flex; justify-content: space-between; align-items: center; margin: 24px 0 12px;">
+        <div class="section-divider" style="margin: 0;">📚 Bookcase</div>
+        <a href="{{ url_for('fullscreen_bookcase') }}" class="btn btn-ghost btn-sm">
+            🔍 View fullscreen
+        </a>
+    </div>
+    <div class="bookcase">
+        <div class="bookcase-stats">
+            <span class="title">My library</span>
+            <span>{{ finished_books }} / {{ total_books }} read ·
+                  {{ (finished_books / total_books * 100)|round|int if total_books else 0 }}% of the shelf</span>
+        </div>
+
+        {% set series_palette = {
+            'Discworld': ['#8b3a3a', '#6b4226', '#3d5a47', '#5c3a5e', '#4a5d7a', '#7d6b3a', '#6b2e2e', '#3a5a5a'],
+            'Unsorted':  ['#8b5a3c', '#6b4226', '#7a5a8a', '#5a7a8a', '#9b6b3c', '#7b8b5a', '#8a4a4a']
+        } %}
+
+        {% for series_name, sub_groups in shelves.items() %}
+        <div class="series-section">
+            <div class="series-label">📖 {{ series_name }}</div>
+            {% for sub_name, books in sub_groups.items() %}
+            {% if sub_name and sub_name != '—' %}
+            <div class="subseries-label">— {{ sub_name }}</div>
+            {% endif %}
+            <div class="shelf">
+                {% for b in books %}
+                {# spine width derived from pages, height too — varied & realistic #}
+                {% set spine_width = (16 + (b.total_pages // 50)) %}
+                {% set spine_width = [spine_width, 42]|min %}
+                {% set spine_height = (95 + (b.total_pages // 12)) %}
+                {% set spine_height = [spine_height, 140]|min %}
+                {# color: pick from palette based on order #}
+                {% set palette = series_palette.get(series_name, series_palette['Unsorted']) %}
+                {% set color = palette[loop.index0 % palette|length] %}
+                <div class="book-spine
+                            {% if b.is_reading %}reading{% elif b.is_finished %}finished{% elif b.pages_read == 0 %}unread{% endif %}"
+                     style="width: {{ spine_width }}px; height: {{ spine_height }}px;
+                            --spine-color: {{ color }};
+                            --delay: {{ loop.index0 * 0.04 }}s;"
+                     onclick="openBookModal({{ b.id }})"
+                     title="{{ b.title }} ({{ b.year or '—' }}) — {{ b.pages_read }}/{{ b.total_pages }} pages">
+                    <span class="spine-title">{{ b.title }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% endfor %}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {# ────── Book detail modal ────── #}
+    <div class="book-modal-backdrop" id="bookModalBackdrop" onclick="if(event.target===this) closeBookModal()">
+        <div class="book-modal" id="bookModalContent">
+            <button class="close-x" onclick="closeBookModal()">×</button>
+            <div id="bookModalBody"></div>
+        </div>
+    </div>
+
+    {# Hidden data for modal — one block per book #}
+    <script id="bookData" type="application/json">
+    {
+      {% for series_name, sub_groups in shelves.items() %}
+        {% for sub_name, books in sub_groups.items() %}
+          {% for b in books %}
+            "{{ b.id }}": {
+              "id": {{ b.id }},
+              "title": {{ b.title|tojson }},
+              "author": {{ b.author|tojson }},
+              "series": {{ (b.series or '')|tojson }},
+              "subseries": {{ (b.subseries or '')|tojson }},
+              "year": {{ b.year or 0 }},
+              "publisher": {{ (b.publisher or '')|tojson }},
+              "isbn": {{ (b.isbn or '')|tojson }},
+              "cover_url": {{ (b.cover_url or '')|tojson }},
+              "pages_read": {{ b.pages_read }},
+              "total_pages": {{ b.total_pages }},
+              "progress_pct": {{ b.progress_pct }},
+              "is_reading": {{ b.is_reading|tojson }},
+              "is_finished": {{ b.is_finished|tojson }}
+            }{% if not loop.last %},{% endif %}
+          {% endfor %}{% if not loop.last %},{% endif %}
+        {% endfor %}{% if not loop.last %},{% endif %}
+      {% endfor %}
+    }
+    </script>
+
+    <script>
+    const BOOK_DATA = JSON.parse(document.getElementById('bookData').textContent);
+    function openBookModal(id) {
+        const b = BOOK_DATA[id];
+        if (!b) return;
+        const cover = b.cover_url
+            ? `<img src="${b.cover_url}" alt="" onerror="this.style.display='none'">`
+            : `<div style="width:110px;aspect-ratio:2/3;background:var(--bg-alt);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:2.5em;">📖</div>`;
+        const meta = [];
+        if (b.year) meta.push(b.year);
+        if (b.publisher) meta.push(b.publisher + ' edition');
+        if (b.isbn) meta.push('ISBN ' + b.isbn);
+        const subline = b.series ? `${b.series}${b.subseries && b.subseries !== '—' ? ' · ' + b.subseries : ''}` : '';
+        document.getElementById('bookModalBody').innerHTML = `
+            <div class="book-modal-cover">
+                ${cover}
+                <div class="info">
+                    <h3>${b.title}</h3>
+                    <div class="author">${b.author || ''}</div>
+                    ${subline ? `<div class="meta">${subline}</div>` : ''}
+                    <div class="meta">${meta.join(' · ')}</div>
+                </div>
+            </div>
+            <div class="book-modal-progress">
+                <progress value="${b.pages_read}" max="${b.total_pages}"></progress>
+                <div style="font-size:0.85em;color:var(--text-muted);">
+                    ${b.pages_read} / ${b.total_pages} pages · ${b.progress_pct}%
+                    ${b.is_finished ? ' · ✓ Finished' : b.is_reading ? ' · 📖 Reading now' : ''}
+                </div>
+            </div>
+            <form method="POST" action="/update_progress/${b.id}" class="book-modal-form">
+                <input type="number" name="pages_read" value="${b.pages_read}" min="0" max="${b.total_pages}">
+                <button class="btn btn-primary btn-sm" type="submit">Update progress</button>
+            </form>
+            <div class="book-modal-actions">
+                ${!b.is_reading ? `<a href="/set_reading/${b.id}" class="btn btn-ghost btn-sm">📖 Set as currently reading</a>` : ''}
+                <a href="/delete_book/${b.id}" class="btn btn-link btn-sm"
+                   onclick="return confirm('Remove this book?')">Remove</a>
+            </div>
+        `;
+        document.getElementById('bookModalBackdrop').classList.add('open');
+    }
+    function closeBookModal() {
+        document.getElementById('bookModalBackdrop').classList.remove('open');
+    }
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeBookModal(); });
+    </script>
+
+    <div class="add-form">
+        <form method="POST" action="{{ url_for('add_book') }}">
+            <label>Search Google Books</label>
+            <div style="display: flex; gap: 8px;">
+                <input type="text" name="search_query" placeholder="Book title or author…" required style="flex: 1; padding: 8px 12px; border: 1px solid var(--border); border-radius: 7px;">
+                <select name="category" style="padding: 8px 12px; border: 1px solid var(--border); border-radius: 7px;">
+                    <option value="general">General</option>
+                    <option value="fiction">Fiction</option>
+                    <option value="non-fiction">Non-fiction</option>
+                    <option value="design">Design</option>
+                    <option value="reference">Reference</option>
+                </select>
+                <button class="btn btn-primary">Search</button>
+            </div>
+        </form>
+    </div>
+
+    {% if items %}
+    <div class="section-divider">Collection</div>
+    <div class="lib-grid">
+        {% for b in items %}
+        <div class="lib-card">
+            {% if b.cover_url %}<img src="{{ b.cover_url }}" alt="">{% else %}<div class="lib-placeholder">📖</div>{% endif %}
+            <div class="nm">{{ b.title }}</div>
+            <div class="meta">{{ b.author }}</div>
+            <progress value="{{ b.pages_read }}" max="{{ b.total_pages }}"></progress>
+            <div class="lib-actions">
+                <a href="{{ url_for('set_reading', id=b.id) }}" class="btn btn-ghost btn-sm">Read</a>
+                <a href="{{ url_for('delete_book', id=b.id) }}" class="btn btn-link btn-sm">×</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+{# ────────── MOVIES ────────── #}
+{% elif tab == 'movies' %}
+    <div class="add-form">
+        <form method="POST" action="{{ url_for('add_movie') }}">
+            <div class="add-form-row">
+                <div><label>Title</label><input type="text" name="title" required></div>
+                <div><label>Year</label><input type="number" name="year" min="1900" max="2099"></div>
+                <div><label>Runtime (min)</label><input type="number" name="runtime" value="120"></div>
+                <div><label>Cover URL</label><input type="text" name="cover_url" placeholder="optional"></div>
+                <div><button class="btn btn-primary">+ Add</button></div>
+            </div>
+        </form>
+    </div>
+
+    {% if watchlist %}
+    <div class="section-divider">🎬 Watchlist</div>
+    <div class="lib-grid">
+        {% for m in watchlist %}
+        <div class="lib-card">
+            {% if m.cover_url %}<img src="{{ m.cover_url }}" alt="">{% else %}<div class="lib-placeholder">🎬</div>{% endif %}
+            <div class="nm">{{ m.title }}</div>
+            <div class="meta">{{ m.year or '—' }} · {{ m.runtime }} min</div>
+            <div class="lib-actions">
+                <form method="POST" action="{{ url_for('mark_movie_watched', id=m.id) }}" style="display: inline;">
+                    <button class="btn btn-primary btn-sm" type="submit">✓ Watched</button>
+                </form>
+                <a href="{{ url_for('delete_movie', id=m.id) }}" class="btn btn-link btn-sm">×</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if watched %}
+    <div class="section-divider">✓ Watched</div>
+    <div class="lib-grid">
+        {% for m in watched %}
+        <div class="lib-card" style="opacity: 0.85;">
+            {% if m.cover_url %}<img src="{{ m.cover_url }}" alt="">{% else %}<div class="lib-placeholder">🎬</div>{% endif %}
+            <div class="nm">{{ m.title }}</div>
+            <div class="meta">{{ m.year or '—' }} · {{ '⭐' * (m.rating or 0) }}</div>
+            <a href="{{ url_for('delete_movie', id=m.id) }}" class="btn btn-link btn-sm">×</a>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if not watchlist and not watched %}
+    <div class="empty-state">
+        <div class="empty-icon">🎬</div>
+        Add your first film or show above.
+    </div>
+    {% endif %}
+
+{# ────────── SERIES ────────── #}
+{% elif tab == 'series' %}
+    {% if current %}
+    <div class="current-hero">
+        {% if current.cover_url %}<img src="{{ current.cover_url }}" alt="">{% else %}<div class="placeholder">📺</div>{% endif %}
+        <div class="current-info">
+            <div class="lbl">Now watching</div>
+            <h3>{{ current.title }}</h3>
+            <div class="sub">{{ current.total_seasons }} {{ 'season' if current.total_seasons == 1 else 'seasons' }}</div>
+            <progress value="{{ current.episodes_watched }}" max="{{ current.total_episodes }}"></progress>
+            <div style="font-size: 0.85em; color: var(--text-muted);">
+                Episode {{ current.episodes_watched }} / {{ current.total_episodes }}
+            </div>
+            <form method="POST" action="{{ url_for('update_series_progress', id=current.id) }}" style="display: flex; gap: 6px; margin-top: 12px;">
+                <input type="number" name="episodes_watched" value="{{ current.episodes_watched }}" min="0" max="{{ current.total_episodes }}"
+                       style="width: 90px; padding: 6px 10px; border: 1px solid var(--border); border-radius: 7px;">
+                <button class="btn btn-primary btn-sm">Update</button>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="add-form">
+        <form method="POST" action="{{ url_for('add_series') }}">
+            <div class="add-form-row">
+                <div><label>Title</label><input type="text" name="title" required></div>
+                <div><label>Seasons</label><input type="number" name="total_seasons" value="1"></div>
+                <div><label>Episodes</label><input type="number" name="total_episodes" value="10"></div>
+                <div><label>Cover URL</label><input type="text" name="cover_url" placeholder="optional"></div>
+                <div><button class="btn btn-primary">+ Add</button></div>
+            </div>
+        </form>
+    </div>
+
+    {% if items %}
+    <div class="section-divider">Series</div>
+    <div class="lib-grid">
+        {% for s in items %}
+        <div class="lib-card">
+            {% if s.cover_url %}<img src="{{ s.cover_url }}" alt="">{% else %}<div class="lib-placeholder">📺</div>{% endif %}
+            <div class="nm">{{ s.title }}</div>
+            <div class="meta">{{ s.episodes_watched }}/{{ s.total_episodes }} ep</div>
+            <progress value="{{ s.episodes_watched }}" max="{{ s.total_episodes }}"></progress>
+            <div class="lib-actions">
+                <a href="{{ url_for('set_watching_series', id=s.id) }}" class="btn btn-ghost btn-sm">Watch</a>
+                <a href="{{ url_for('delete_series', id=s.id) }}" class="btn btn-link btn-sm">×</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+{# ────────── BOARDGAMES ────────── #}
+{% elif tab == 'boardgames' %}
+    <div class="add-form">
+        <form method="POST" action="{{ url_for('add_boardgame') }}">
+            <div class="add-form-row" style="grid-template-columns: 1fr 80px 80px 80px 100px auto;">
+                <div><label>Title</label><input type="text" name="title" required></div>
+                <div><label>Min</label><input type="number" name="min_players" value="2"></div>
+                <div><label>Max</label><input type="number" name="max_players" value="4"></div>
+                <div><label>Play (min)</label><input type="number" name="avg_playtime" value="60"></div>
+                <div><label>Cover URL</label><input type="text" name="cover_url" placeholder="optional"></div>
+                <div><button class="btn btn-primary">+ Add</button></div>
+            </div>
+        </form>
+    </div>
+
+    {% if collection %}
+    <div class="section-divider">🎲 Your collection</div>
+    <div class="lib-grid">
+        {% for g in collection %}
+        <div class="lib-card">
+            {% if g.cover_url %}<img src="{{ g.cover_url }}" alt="">{% else %}<div class="lib-placeholder">🎲</div>{% endif %}
+            <div class="nm">{{ g.title }}</div>
+            <div class="meta">{{ g.min_players }}-{{ g.max_players }} players · {{ g.avg_playtime }}m</div>
+            <div class="meta">Played {{ g.times_played }}× {% if g.last_played %}· last {{ g.last_played.strftime('%b %d') }}{% endif %}</div>
+            <div class="lib-actions">
+                <a href="{{ url_for('log_boardgame_play', id=g.id) }}" class="btn btn-primary btn-sm">+ Play</a>
+                <a href="{{ url_for('delete_boardgame', id=g.id) }}" class="btn btn-link btn-sm">×</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-icon">🎲</div>
+        Add the first game from your collection above.
+    </div>
+    {% endif %}
+
+{# ────────── MANGA ────────── #}
+{% elif tab == 'manga' %}
+    {% if current %}
+    <div class="current-hero">
+        {% if current.cover_url %}<img src="{{ current.cover_url }}" alt="">{% else %}<div class="placeholder">📖</div>{% endif %}
+        <div class="current-info">
+            <div class="lbl">Now reading</div>
+            <h3>{{ current.title }}</h3>
+            <progress value="{{ current.chapters_read }}" max="{{ current.total_chapters or 1 }}"></progress>
+            <div style="font-size: 0.85em; color: var(--text-muted);">
+                Chapter {{ current.chapters_read }}{% if current.total_chapters %} / {{ current.total_chapters }}{% endif %}
+            </div>
+            <form method="POST" action="{{ url_for('update_manga_progress', id=current.id) }}" style="display: flex; gap: 6px; margin-top: 12px;">
+                <input type="number" name="chapters_read" value="{{ current.chapters_read }}" min="0"
+                       style="width: 90px; padding: 6px 10px; border: 1px solid var(--border); border-radius: 7px;">
+                <button class="btn btn-primary btn-sm">Update</button>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="add-form">
+        <form method="POST" action="{{ url_for('add_manga') }}">
+            <label>Search MyAnimeList (Jikan)</label>
+            <div style="display: flex; gap: 8px;">
+                <input type="text" name="search_query" placeholder="Manga title…" required style="flex: 1; padding: 8px 12px; border: 1px solid var(--border); border-radius: 7px;">
+                <button class="btn btn-primary">Search</button>
+            </div>
+        </form>
+    </div>
+
+    {% if items %}
+    <div class="lib-grid">
+        {% for m in items %}
+        <div class="lib-card">
+            {% if m.cover_url %}<img src="{{ m.cover_url }}" alt="">{% else %}<div class="lib-placeholder">📖</div>{% endif %}
+            <div class="nm">{{ m.title }}</div>
+            <div class="meta">{{ m.chapters_read }}{% if m.total_chapters %}/{{ m.total_chapters }}{% endif %} ch</div>
+            <div class="lib-actions">
+                <a href="{{ url_for('set_reading_manga', id=m.id) }}" class="btn btn-ghost btn-sm">Read</a>
+                <a href="{{ url_for('delete_manga', id=m.id) }}" class="btn btn-link btn-sm">×</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+{# ────────── ANIME ────────── #}
+{% elif tab == 'anime' %}
+    {% if current %}
+    <div class="current-hero">
+        {% if current.cover_url %}<img src="{{ current.cover_url }}" alt="">{% else %}<div class="placeholder">🍙</div>{% endif %}
+        <div class="current-info">
+            <div class="lbl">Now watching</div>
+            <h3>{{ current.title }}</h3>
+            <progress value="{{ current.episodes_watched }}" max="{{ current.total_episodes }}"></progress>
+            <div style="font-size: 0.85em; color: var(--text-muted);">
+                Episode {{ current.episodes_watched }} / {{ current.total_episodes }}
+            </div>
+            <form method="POST" action="{{ url_for('update_anime_progress', id=current.id) }}" style="display: flex; gap: 6px; margin-top: 12px;">
+                <input type="number" name="episodes_watched" value="{{ current.episodes_watched }}" min="0" max="{{ current.total_episodes }}"
+                       style="width: 90px; padding: 6px 10px; border: 1px solid var(--border); border-radius: 7px;">
+                <button class="btn btn-primary btn-sm">Update</button>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="add-form">
+        <form method="POST" action="{{ url_for('add_anime') }}">
+            <label>Search MyAnimeList (Jikan)</label>
+            <div style="display: flex; gap: 8px;">
+                <input type="text" name="search_query" placeholder="Anime title…" required style="flex: 1; padding: 8px 12px; border: 1px solid var(--border); border-radius: 7px;">
+                <button class="btn btn-primary">Search</button>
+            </div>
+        </form>
+    </div>
+
+    {% if items %}
+    <div class="lib-grid">
+        {% for a in items %}
+        <div class="lib-card">
+            {% if a.cover_url %}<img src="{{ a.cover_url }}" alt="">{% else %}<div class="lib-placeholder">🍙</div>{% endif %}
+            <div class="nm">{{ a.title }}</div>
+            <div class="meta">{{ a.episodes_watched }}/{{ a.total_episodes }} ep</div>
+            <div class="lib-actions">
+                <a href="{{ url_for('set_watching_anime', id=a.id) }}" class="btn btn-ghost btn-sm">Watch</a>
+                <a href="{{ url_for('delete_anime', id=a.id) }}" class="btn btn-link btn-sm">×</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+{% endif %}
+{% endblock %}

@@ -1,0 +1,445 @@
+{% extends 'base.html' %}
+{% block title %}Today{% endblock %}
+
+{% block head %}
+<style>
+    .today-hero {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 18px;
+        margin-bottom: 24px;
+    }
+    .hero-card {
+        background: linear-gradient(135deg, #fbf1e1 0%, #f3e3c8 100%);
+        border-radius: 16px;
+        padding: 24px;
+        border: 1px solid var(--border);
+        box-shadow: var(--shadow-md);
+    }
+    .hero-title { font-size: 1.7em; font-weight: 700; color: var(--primary-dark); margin-bottom: 4px; }
+    .hero-sub { color: var(--text-muted); font-size: 0.92em; }
+    .stats-row { display: flex; gap: 14px; margin-top: 18px; }
+    .stat-pill {
+        background: var(--card-bg);
+        padding: 10px 16px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        flex: 1;
+        text-align: center;
+    }
+    .stat-pill .num { font-size: 1.4em; font-weight: 700; color: var(--primary-dark); }
+    .stat-pill .lbl { font-size: 0.72em; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); }
+
+    .planner-form {
+        background: var(--card-bg);
+        border-radius: 16px;
+        padding: 22px;
+        border: 1px solid var(--border);
+        box-shadow: var(--shadow-sm);
+    }
+    .planner-form h3 { margin-bottom: 12px; font-size: 1.05em; }
+    .field-group { margin-bottom: 14px; }
+    .field-label { font-size: 0.78em; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 6px; display: block; font-weight: 600; }
+    .field-group input[type=number], .field-group input[type=text], .field-group textarea, .field-group select {
+        width: 100%;
+        padding: 9px 12px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        font-size: 0.92em;
+        font-family: inherit;
+        background: #fffaf2;
+    }
+    .mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .mode-option {
+        position: relative;
+        background: var(--bg-alt);
+        border: 2px solid transparent;
+        border-radius: 10px;
+        padding: 10px 12px;
+        cursor: pointer;
+        font-size: 0.85em;
+        text-align: left;
+        transition: all 0.15s;
+    }
+    .mode-option:hover { border-color: var(--primary); }
+    .mode-option input { position: absolute; opacity: 0; }
+    .mode-option input:checked + .mode-content { color: var(--primary-dark); }
+    .mode-option:has(input:checked) { background: #fffaf2; border-color: var(--primary); box-shadow: var(--shadow-sm); }
+    .mode-content .name { font-weight: 600; display: block; margin-bottom: 2px; }
+    .mode-content .desc { font-size: 0.78em; color: var(--text-muted); }
+
+    .suggestions { margin-top: 24px; }
+    .suggestion-list { display: flex; flex-direction: column; gap: 8px; }
+    .sugg-item {
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-left: 4px solid var(--primary);
+        border-radius: 10px;
+        padding: 14px 16px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        transition: all 0.15s;
+    }
+    .sugg-item:hover { box-shadow: var(--shadow-md); transform: translateX(2px); }
+    .sugg-item.completed { opacity: 0.55; }
+    .sugg-item.completed .sugg-title { text-decoration: line-through; }
+    .sugg-check {
+        width: 24px; height: 24px;
+        border-radius: 50%;
+        border: 2px solid var(--border-strong);
+        background: var(--card-bg);
+        cursor: pointer;
+        display: flex; align-items: center; justify-content: center;
+        text-decoration: none;
+        font-size: 0.9em;
+    }
+    .sugg-check.done { background: var(--green); border-color: var(--green); color: white; }
+    .sugg-body { flex: 1; min-width: 0; }
+    .sugg-title { font-weight: 600; font-size: 0.95em; margin-bottom: 3px; }
+    .sugg-meta { font-size: 0.78em; color: var(--text-muted); display: flex; gap: 10px; flex-wrap: wrap; }
+    .sugg-priority {
+        font-size: 0.7em;
+        padding: 2px 8px;
+        border-radius: 10px;
+        color: white;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .sugg-time { font-size: 0.82em; color: var(--text-muted); font-weight: 600; }
+
+    .almost-done-shelf {
+        background: linear-gradient(135deg, #fff3e0 0%, #ffe8c4 100%);
+        border-radius: 14px;
+        padding: 18px;
+        margin-top: 24px;
+        border: 1px solid var(--orange);
+        border-style: dashed;
+    }
+    .almost-done-shelf h3 { color: var(--orange); margin-bottom: 12px; font-size: 1em; }
+    .almost-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; }
+    .almost-card { background: var(--card-bg); border-radius: 10px; padding: 12px; }
+    .almost-card .nm { font-weight: 600; font-size: 0.9em; margin-bottom: 6px; }
+    .almost-card progress { width: 100%; height: 6px; }
+
+    .wins-card {
+        background: var(--card-bg);
+        border-radius: 14px;
+        padding: 18px;
+        margin-top: 20px;
+        border-left: 4px solid var(--green);
+    }
+    .wins-card h3 { color: var(--green); font-size: 1em; margin-bottom: 8px; }
+    .wins-list { font-size: 0.9em; color: var(--text-muted); }
+
+    .quick-log { margin-top: 20px; }
+    .scale-buttons { display: flex; gap: 6px; }
+    .scale-btn {
+        flex: 1;
+        padding: 8px;
+        border: 1px solid var(--border);
+        background: var(--card-bg);
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 0.95em;
+    }
+    .scale-btn.selected { background: var(--primary); color: white; border-color: var(--primary); }
+
+    .empty {
+        text-align: center;
+        padding: 30px;
+        color: var(--text-muted);
+        font-style: italic;
+    }
+
+    @media (max-width: 768px) {
+        .today-hero { grid-template-columns: 1fr; }
+    }
+
+    /* Quick-capture */
+    .quick-capture {
+        background: var(--card-warm);
+        border-radius: 12px;
+        padding: 12px 14px;
+        margin-bottom: 18px;
+        border: 1px solid var(--border);
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        box-shadow: var(--shadow-sm);
+    }
+    .quick-capture .qc-icon { font-size: 1.3em; }
+    .quick-capture input[type=text] {
+        flex: 1;
+        padding: 9px 12px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        font-size: 0.92em;
+        background: var(--card-bg);
+    }
+    .quick-capture select {
+        padding: 9px 12px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: var(--card-bg);
+        font-size: 0.88em;
+        cursor: pointer;
+    }
+
+    /* Reward banner */
+    .reward-banner {
+        background: linear-gradient(135deg, #fff3e0, #ffe8c4);
+        border: 2px dashed var(--orange);
+        border-radius: 14px;
+        padding: 18px 22px;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+    }
+    .reward-banner.unlocked {
+        background: linear-gradient(135deg, #fef9c3, #fde68a);
+        border: 2px solid var(--yellow);
+        animation: rewardPulse 2s ease-in-out infinite;
+    }
+    @keyframes rewardPulse {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(230, 184, 90, 0.4); }
+        50%      { box-shadow: 0 0 0 8px rgba(230, 184, 90, 0); }
+    }
+    .reward-banner .reward-icon { font-size: 2em; }
+    .reward-banner .reward-body { flex: 1; }
+    .reward-banner .reward-title { font-weight: 700; color: var(--primary-dark); margin-bottom: 4px; }
+    .reward-banner .reward-sub { font-size: 0.85em; color: var(--text-muted); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>☀️ Today</h1>
+        <p>{{ today.strftime('%A, %B %d, %Y') }}</p>
+    </div>
+</div>
+
+{# Quick-capture: dump a thought, pick what it is #}
+<form method="POST" action="{{ url_for('quick_capture') }}" class="quick-capture">
+    <span class="qc-icon">⚡</span>
+    <input type="text" name="text" placeholder="Quick-capture — type a project, book, movie, task, or fun idea…" required>
+    <select name="type">
+        <option value="project">📁 Project</option>
+        <option value="task">📥 Task (Inbox)</option>
+        <option value="fun">🎮 Fun idea</option>
+        <option value="book">📚 Book</option>
+        <option value="movie">🎬 Movie</option>
+    </select>
+    <button class="btn btn-primary btn-sm" type="submit">+ Add</button>
+</form>
+
+{# Reward banner — shows progress toward the unlocked fun reward #}
+{% if reward_status %}
+<div class="reward-banner {% if reward_status.unlocked %}unlocked{% endif %}">
+    <span class="reward-icon">{% if reward_status.unlocked %}🎉{% else %}🎁{% endif %}</span>
+    <div class="reward-body">
+        {% if reward_status.unlocked and reward_status.reward_task %}
+        <div class="reward-title">Reward unlocked!</div>
+        <div class="reward-sub">
+            You've earned it: <strong>{{ reward_status.reward_task.title }}</strong>
+            {% if reward_status.reward_project %} · {{ reward_status.reward_project.icon }} {{ reward_status.reward_project.name }}{% endif %}
+        </div>
+        {% elif reward_status.required_total > 0 %}
+        <div class="reward-title">Reward locked 🔒</div>
+        <div class="reward-sub">
+            Finish your work tasks first ({{ reward_status.required_done }}/{{ reward_status.required_total }} done) —
+            then your fun reward unlocks.
+        </div>
+        {% endif %}
+    </div>
+    {% if reward_status.unlocked and reward_status.reward_task %}
+    <a href="{{ url_for('claim_reward', task_id=reward_status.reward_task.id) }}" class="btn btn-primary btn-sm">Claim 🎁</a>
+    {% endif %}
+</div>
+{% endif %}
+
+<div class="today-hero">
+    <div class="hero-card">
+        <div class="hero-title">
+            {% if streak > 0 %}
+                🔥 {{ streak }}-day streak
+            {% else %}
+                A fresh start
+            {% endif %}
+        </div>
+        <div class="hero-sub">
+            {% if todays_wins|length > 0 %}
+                {{ todays_wins|length }} {{ 'win' if todays_wins|length == 1 else 'wins' }} today —
+                {% if todays_wins|length >= 3 %}you're crushing it{% else %}keep going{% endif %} ✨
+            {% else %}
+                Complete one task and the day is a win.
+            {% endif %}
+        </div>
+        <div class="stats-row">
+            <div class="stat-pill">
+                <div class="num">{{ todays_wins|length }}</div>
+                <div class="lbl">Done today</div>
+            </div>
+            <div class="stat-pill">
+                <div class="num">{{ suggestions|length }}</div>
+                <div class="lbl">Planned</div>
+            </div>
+            <div class="stat-pill">
+                <div class="num">{{ (total_suggested_minutes / 60)|round(1) }}h</div>
+                <div class="lbl">Time</div>
+            </div>
+        </div>
+    </div>
+
+    <form method="POST" action="{{ url_for('today_page') }}" class="planner-form">
+        <h3>📋 Plan my day</h3>
+        <div class="field-group">
+            <label class="field-label">Free time (minutes)</label>
+            <input type="number" name="free_time_minutes" min="15" max="720" step="15"
+                   value="{{ plan.free_time_minutes if plan else 180 }}" required>
+        </div>
+        <div class="field-group">
+            <label class="field-label">Mode</label>
+            <div class="mode-grid">
+                {% for key, info in mode_info.items() %}
+                <label class="mode-option">
+                    <input type="radio" name="mode" value="{{ key }}"
+                           {% if (plan and plan.mode == key) or (not plan and key == 'balanced') %}checked{% endif %}>
+                    <div class="mode-content">
+                        <span class="name">{{ info.label }}</span>
+                        <span class="desc">{{ info.desc }}</span>
+                    </div>
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+        <button class="btn btn-primary" style="width: 100%;">✨ Generate plan</button>
+    </form>
+</div>
+
+<div class="suggestions">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <h2 style="font-size: 1.15em;">📌 Suggested for you</h2>
+        {% if plan %}
+        <span style="font-size: 0.85em; color: var(--text-muted);">
+            {{ mode_info[plan.mode].label }} · {{ plan.free_time_minutes }} min budget
+        </span>
+        {% endif %}
+    </div>
+
+    {% if suggestions %}
+    <div class="suggestion-list">
+        {% for task, project, score, mins in suggestions %}
+        {% set pinfo = priority_info[project.priority] %}
+        <div class="sugg-item {% if task.is_completed %}completed{% endif %}">
+            <a href="{{ url_for('complete_today_task', id=task.id) }}"
+               class="sugg-check {% if task.is_completed %}done{% endif %}">
+                {% if task.is_completed %}✓{% endif %}
+            </a>
+            <div class="sugg-body">
+                <div class="sugg-title">{{ task.title }}</div>
+                <div class="sugg-meta">
+                    <span>{{ project.icon }} {{ project.name }}</span>
+                    <span class="sugg-priority" style="background: {{ pinfo.color }};">{{ pinfo.icon }} {{ pinfo.label }}</span>
+                    {% if project.computed_percent >= 75 %}<span style="color: var(--orange); font-weight: 600;">⚡ Almost done</span>{% endif %}
+                    {% if project.deadline %}
+                    {% set days_left = (project.deadline - today).days %}
+                    <span>
+                        {% if days_left < 0 %}🔴 {{ -days_left }}d overdue
+                        {% elif days_left == 0 %}🔴 Due today
+                        {% elif days_left <= 3 %}🟠 {{ days_left }}d left
+                        {% else %}📅 {{ days_left }}d left{% endif %}
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="sugg-time">{{ mins }}m</div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty">
+        Pick a mode and hit generate to get your suggested tasks for the day.
+    </div>
+    {% endif %}
+</div>
+
+{% if almost_done %}
+<div class="almost-done-shelf">
+    <h3>⚡ Almost done — finish line is close</h3>
+    <div class="almost-grid">
+        {% for p in almost_done %}
+        <div class="almost-card">
+            <div class="nm">{{ p.icon }} {{ p.name }}</div>
+            <progress value="{{ p.computed_percent }}" max="100"></progress>
+            <div style="font-size: 0.78em; color: var(--text-muted); margin-top: 4px;">{{ p.computed_percent }}%</div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+{% if todays_wins %}
+<div class="wins-card">
+    <h3>🏆 Today's wins</h3>
+    <div class="wins-list">
+        {% for w in todays_wins %}
+        ✓ {{ w.title }}{% if w.project %} <span style="opacity: 0.6;">— {{ w.project.name }}</span>{% endif %}<br>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<div class="card quick-log" style="margin-top: 20px;">
+    <h3 style="font-size: 1em; margin-bottom: 14px;">📝 Daily check-in</h3>
+    <form method="POST" action="{{ url_for('save_daily_log') }}">
+        <div class="field-group">
+            <label class="field-label">Energy (1-5)</label>
+            <div class="scale-buttons">
+                {% for i in range(1, 6) %}
+                <label class="scale-btn {% if daily_log and daily_log.energy == i %}selected{% endif %}">
+                    <input type="radio" name="energy" value="{{ i }}" style="display: none;"
+                           {% if daily_log and daily_log.energy == i %}checked{% endif %}>{{ i }}
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="field-group">
+            <label class="field-label">Mood (1-5)</label>
+            <div class="scale-buttons">
+                {% for i in range(1, 6) %}
+                <label class="scale-btn {% if daily_log and daily_log.mood == i %}selected{% endif %}">
+                    <input type="radio" name="mood" value="{{ i }}" style="display: none;"
+                           {% if daily_log and daily_log.mood == i %}checked{% endif %}>{{ i }}
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="field-group">
+            <label class="field-label">Today's win</label>
+            <input type="text" name="win" placeholder="What's one thing you're proud of today?"
+                   value="{{ daily_log.win if daily_log else '' }}">
+        </div>
+        <div class="field-group">
+            <label class="field-label">Notes</label>
+            <textarea name="notes" rows="2" placeholder="Anything else…">{{ daily_log.notes if daily_log else '' }}</textarea>
+        </div>
+        <button class="btn btn-ghost" type="submit">Save check-in</button>
+    </form>
+</div>
+
+<script>
+document.querySelectorAll('.scale-btn').forEach(btn => {
+    btn.addEventListener('click', e => {
+        const name = btn.querySelector('input').name;
+        document.querySelectorAll(`.scale-btn input[name="${name}"]`).forEach(i => {
+            i.closest('.scale-btn').classList.remove('selected');
+        });
+        btn.classList.add('selected');
+    });
+});
+</script>
+{% endblock %}

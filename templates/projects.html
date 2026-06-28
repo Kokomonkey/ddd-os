@@ -1,0 +1,248 @@
+{% extends 'base.html' %}
+{% block title %}Projects{% endblock %}
+
+{% block head %}
+<style>
+    .kanban {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+    }
+    .column {
+        background: var(--card-warm);
+        border-radius: 14px;
+        padding: 14px;
+        min-height: 60vh;
+        border: 1px solid var(--border);
+    }
+    .column-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 8px 12px;
+        border-bottom: 2px solid var(--border-strong);
+        margin-bottom: 12px;
+    }
+    .column-icon { font-size: 1.2em; }
+    .column-title { font-weight: 700; font-size: 0.95em; }
+    .column-count {
+        margin-left: auto;
+        background: var(--card-bg);
+        padding: 2px 9px;
+        border-radius: 10px;
+        font-size: 0.75em;
+        color: var(--text-muted);
+        font-weight: 600;
+    }
+
+    .project-card {
+        background: var(--card-bg);
+        border-radius: 12px;
+        padding: 14px;
+        margin-bottom: 10px;
+        border: 1px solid var(--border);
+        border-left: 5px solid;
+        transition: all 0.15s;
+    }
+    .project-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
+
+    .project-header { display: flex; gap: 8px; align-items: start; margin-bottom: 8px; }
+    .project-icon { font-size: 1.4em; }
+    .project-name { font-weight: 700; font-size: 0.95em; flex: 1; line-height: 1.3; }
+    .project-effort {
+        font-size: 0.7em;
+        background: var(--bg-alt);
+        padding: 2px 7px;
+        border-radius: 8px;
+        color: var(--text-muted);
+        font-weight: 700;
+    }
+
+    .progress-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.8em;
+        color: var(--text-muted);
+        margin-bottom: 8px;
+    }
+    .progress-row progress { flex: 1; height: 6px; }
+
+    .project-deadline {
+        font-size: 0.78em;
+        color: var(--text-muted);
+        margin-bottom: 6px;
+    }
+    .deadline-soon { color: var(--orange); font-weight: 600; }
+    .deadline-overdue { color: var(--red); font-weight: 700; }
+
+    .project-tasks {
+        font-size: 0.82em;
+        margin-top: 8px;
+        padding-top: 8px;
+        border-top: 1px dashed var(--border);
+    }
+    .task-line {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 3px 0;
+        color: var(--text-muted);
+    }
+    .task-line.done { text-decoration: line-through; opacity: 0.55; }
+    .task-line .check {
+        width: 14px; height: 14px; border: 1.5px solid var(--border-strong);
+        border-radius: 3px; display: inline-flex; align-items: center; justify-content: center;
+        font-size: 0.7em; text-decoration: none; flex-shrink: 0;
+    }
+    .task-line .check.done { background: var(--green); border-color: var(--green); color: white; }
+
+    .project-actions { display: flex; gap: 6px; margin-top: 10px; }
+
+    .new-task-form { margin-top: 8px; display: flex; gap: 4px; }
+    .new-task-form input {
+        flex: 1; padding: 4px 8px; border: 1px solid var(--border);
+        border-radius: 6px; font-size: 0.78em; background: var(--bg);
+    }
+    .new-task-form button { padding: 4px 10px; font-size: 0.78em; }
+
+    .create-bar {
+        background: var(--card-bg);
+        border-radius: 14px;
+        padding: 18px;
+        margin-bottom: 20px;
+        border: 1px solid var(--border);
+        box-shadow: var(--shadow-sm);
+    }
+    .create-grid {
+        display: grid;
+        grid-template-columns: 2fr 1fr 1fr 1fr 1fr auto;
+        gap: 8px;
+        align-items: end;
+    }
+    .create-grid label { font-size: 0.7em; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); display: block; margin-bottom: 4px; font-weight: 600; }
+    .create-grid input, .create-grid select {
+        width: 100%; padding: 8px 10px; border: 1px solid var(--border);
+        border-radius: 7px; font-size: 0.88em; background: var(--bg);
+    }
+
+    @media (max-width: 1024px) {
+        .kanban { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 640px) {
+        .kanban { grid-template-columns: 1fr; }
+        .create-grid { grid-template-columns: 1fr; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>🎯 Projects</h1>
+        <p>Sorted by priority — drag your focus where it matters.</p>
+    </div>
+</div>
+
+<div class="create-bar">
+    <form method="POST" action="{{ url_for('create_project') }}">
+        <div class="create-grid">
+            <div>
+                <label>Project name</label>
+                <input type="text" name="name" placeholder="What's the project?" required>
+            </div>
+            <div>
+                <label>Priority</label>
+                <select name="priority">
+                    {% for key in priority_order %}
+                    <option value="{{ key }}">{{ priority_info[key].icon }} {{ priority_info[key].label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label>Effort</label>
+                <select name="effort">
+                    <option value="S">S — Small</option>
+                    <option value="M" selected>M — Medium</option>
+                    <option value="L">L — Large</option>
+                    <option value="XL">XL — Massive</option>
+                </select>
+            </div>
+            <div>
+                <label>Icon</label>
+                <input type="text" name="icon" maxlength="2" placeholder="📁" value="📁">
+            </div>
+            <div>
+                <label>Deadline</label>
+                <input type="date" name="deadline">
+            </div>
+            <div>
+                <button class="btn btn-primary" type="submit">+ Add</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<div class="kanban">
+    {% for key in priority_order %}
+    {% set info = priority_info[key] %}
+    {% set projects = by_priority[key] %}
+    <div class="column">
+        <div class="column-header">
+            <span class="column-icon">{{ info.icon }}</span>
+            <span class="column-title" style="color: {{ info.color }};">{{ info.label }}</span>
+            <span class="column-count">{{ projects|length }}</span>
+        </div>
+        {% for p in projects %}
+        <div class="project-card" style="border-left-color: {{ p.color }};">
+            <div class="project-header">
+                <span class="project-icon">{{ p.icon }}</span>
+                <span class="project-name">{{ p.name }}</span>
+                <span class="project-effort">{{ p.effort }}</span>
+            </div>
+            <div class="progress-row">
+                <progress value="{{ p.computed_percent }}" max="100"></progress>
+                <span>{{ p.computed_percent }}%</span>
+            </div>
+            {% if p.deadline %}
+            {% set days_left = (p.deadline - today).days %}
+            <div class="project-deadline {% if days_left < 0 %}deadline-overdue{% elif days_left <= 7 %}deadline-soon{% endif %}">
+                📅
+                {% if days_left < 0 %}{{ -days_left }}d overdue
+                {% elif days_left == 0 %}Due today
+                {% elif days_left == 1 %}Due tomorrow
+                {% else %}{{ days_left }}d left ({{ p.deadline.strftime('%b %d') }}){% endif %}
+            </div>
+            {% endif %}
+            {% if p.tasks %}
+            <div class="project-tasks">
+                {% for t in p.tasks[:5] %}
+                <div class="task-line {% if t.is_completed %}done{% endif %}">
+                    <a href="{{ url_for('complete_today_task', id=t.id) }}"
+                       class="check {% if t.is_completed %}done{% endif %}">{% if t.is_completed %}✓{% endif %}</a>
+                    <span>{{ t.title }}</span>
+                </div>
+                {% endfor %}
+                {% if p.tasks|length > 5 %}
+                <div style="font-size: 0.75em; opacity: 0.6; padding-left: 20px;">+{{ p.tasks|length - 5 }} more</div>
+                {% endif %}
+            </div>
+            {% endif %}
+            <form method="POST" action="{{ url_for('quick_add_project_task', pid=p.id) }}" class="new-task-form">
+                <input type="text" name="title" placeholder="+ add task…">
+                <input type="number" name="effort_minutes" value="30" min="5" max="480" step="5" style="width: 55px;" title="minutes">
+                <button class="btn btn-ghost btn-sm" type="submit">+</button>
+            </form>
+            <div class="project-actions">
+                <a href="{{ url_for('archive_project', id=p.id) }}" class="btn btn-link btn-sm">Archive</a>
+            </div>
+        </div>
+        {% else %}
+        <div style="text-align: center; padding: 20px; color: var(--text-muted); font-size: 0.85em; opacity: 0.7;">
+            Nothing here yet
+        </div>
+        {% endfor %}
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

@@ -71,6 +71,40 @@
         transition: opacity 0.2s;
     }
 
+    /* Calendar overlays (Phase 4) */
+    .deadline-pill {
+        background: linear-gradient(90deg, var(--p-color, var(--red)), rgba(0,0,0,0));
+        background-color: rgba(193, 67, 46, 0.08);
+        color: var(--p-color, var(--red));
+        font-size: 0.78em;
+        padding: 6px 10px;
+        border-radius: 7px;
+        border-left: 4px solid var(--p-color, var(--red));
+        margin-bottom: 6px;
+        font-weight: 600;
+        display: flex; align-items: center; gap: 6px;
+    }
+    .deadline-pill .icn { font-size: 1.1em; }
+    .completion-stamp {
+        background: #ecfdf5;
+        color: #047857;
+        font-size: 0.75em;
+        padding: 4px 8px;
+        border-radius: 6px;
+        border-left: 3px solid var(--green);
+        margin-bottom: 4px;
+        display: flex; align-items: center; gap: 5px;
+    }
+    .completion-stamp .icn { color: var(--green); font-weight: 700; }
+    .overlay-divider {
+        font-size: 0.62em;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: var(--text-muted);
+        font-weight: 700;
+        padding: 6px 0 2px;
+        opacity: 0.7;
+    }
     .task-card.deadline { border-left-color: var(--red); background: #fff5f5; }
     .task-card.event { border-left-color: var(--green); background: #f0fff4; }
     .task-card.completed { opacity: 0.45; text-decoration: line-through; background: #f1f3f4; border-left-color: #b2bec3; }
@@ -122,6 +156,31 @@
             <div class="day-num">{{ day_date.day }}</div>
         </div>
 
+        {# Phase 4 overlays: project deadlines #}
+        {% if deadlines_by_date.get(day_date) %}
+        {% for proj in deadlines_by_date[day_date] %}
+        {% set pinfo = priority_info.get(proj.priority, priority_info['want']) %}
+        <a href="{{ url_for('projects_page') }}" class="deadline-pill" style="--p-color: {{ pinfo.color }}; text-decoration: none;">
+            <span class="icn">{{ pinfo.icon }}</span>
+            <span>{{ proj.icon }} {{ proj.name }} — due</span>
+        </a>
+        {% endfor %}
+        {% endif %}
+
+        {# Phase 4 overlays: completed project tasks (✓ stamps) #}
+        {% if completed_by_date.get(day_date) %}
+        <div class="overlay-divider">✓ shipped</div>
+        {% for ct in completed_by_date[day_date][:5] %}
+        <div class="completion-stamp">
+            <span class="icn">✓</span>
+            <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ ct.title }}</span>
+        </div>
+        {% endfor %}
+        {% if completed_by_date[day_date]|length > 5 %}
+        <div style="font-size: 0.7em; color: var(--text-muted); padding-left: 4px;">+ {{ completed_by_date[day_date]|length - 5 }} more</div>
+        {% endif %}
+        {% endif %}
+
         {% for task in tasks %}
         {% if task.date == day_date %}
         <div class="task-card {{ task.task_type }} {% if task.is_completed %}completed{% endif %}">
@@ -157,26 +216,17 @@
 <script>
 function handleToggle(checkbox) {
     const taskId = checkbox.dataset.taskId;
-    const colIndex = checkbox.dataset.col;
-    const col = document.getElementById('col-' + colIndex);
-    const boxes = col.querySelectorAll('.task-checkbox');
-    const allChecked = Array.from(boxes).every(cb => cb.checked);
-
-    if (checkbox.checked && allChecked && boxes.length > 0) {
-        const rect = col.getBoundingClientRect();
-        confetti({
-            particleCount: 150,
-            spread: 80,
-            origin: {
-                x: (rect.left + rect.width / 2) / window.innerWidth,
-                y: (rect.top + rect.height / 2) / window.innerHeight
-            },
-            colors: ['#0984e3', '#00b894', '#d63031', '#ffffff']
-        });
-        setTimeout(() => { window.location.href = '/toggle/' + taskId; }, 1200);
-    } else {
-        window.location.href = '/toggle/' + taskId;
+    if (checkbox.checked) {
+        const rect = checkbox.getBoundingClientRect();
+        if (typeof confetti === 'function') {
+            confetti({
+                particleCount: 60,
+                spread: 55,
+                origin: { x: (rect.left + 10) / window.innerWidth, y: (rect.top + 10) / window.innerHeight }
+            });
+        }
     }
+    setTimeout(() => { window.location.href = '/toggle/' + taskId; }, 300);
 }
 </script>
 {% endblock %}

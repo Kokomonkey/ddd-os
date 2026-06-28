@@ -1,0 +1,114 @@
+{% extends 'base.html' %}
+{% block title %}Spin result{% endblock %}
+
+{% block head %}
+<style>
+.spin-stage {
+    max-width: 520px;
+    margin: 40px auto 0;
+    text-align: center;
+}
+.spin-card {
+    background: var(--card-bg);
+    border-radius: 20px;
+    padding: 40px 30px;
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--border);
+    animation: spinReveal 0.8s cubic-bezier(.34,1.56,.64,1);
+    position: relative;
+    overflow: hidden;
+}
+.spin-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at top, rgba(255,217,122,0.12), transparent 70%);
+    pointer-events: none;
+}
+@keyframes spinReveal {
+    0%   { transform: rotate(-15deg) scale(0.5); opacity: 0; }
+    60%  { transform: rotate(8deg)  scale(1.05); opacity: 1; }
+    100% { transform: rotate(0deg)  scale(1); }
+}
+.spin-icon {
+    font-size: 5em;
+    margin-bottom: 10px;
+    display: inline-block;
+    animation: bounce 1.4s ease-in-out infinite;
+}
+@keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-10px); }
+}
+.spin-title {
+    font-size: 1.6em;
+    font-weight: 700;
+    color: var(--primary-dark);
+    margin-bottom: 6px;
+}
+.spin-sub {
+    color: var(--text-muted);
+    margin-bottom: 24px;
+    font-size: 1em;
+}
+.spin-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+.empty-spin {
+    text-align: center;
+    padding: 50px 20px;
+    color: var(--text-muted);
+}
+.empty-spin .icon { font-size: 3.5em; margin-bottom: 10px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>🎲 The wheel says…</h1>
+        <p>Random pick from your <strong>{{ category }}</strong> backlog.</p>
+    </div>
+    <a href="{{ url_for('spin_page') }}" class="btn btn-ghost btn-sm">← All categories</a>
+</div>
+
+<div class="spin-stage">
+    {% if pick %}
+    <div class="spin-card">
+        <div class="spin-icon">{{ pick.icon }}</div>
+        <div class="spin-title">{{ pick.title }}</div>
+        {% if pick.subtitle %}<div class="spin-sub">{{ pick.subtitle }}</div>{% endif %}
+
+        <div class="spin-actions">
+            <a href="{{ url_for('spin_category', category=category) }}" class="btn btn-ghost">🎲 Spin again</a>
+
+            {% if pick.kind in ['fun_task', 'want_task'] %}
+            <a href="{{ url_for('complete_today_task', id=pick.task_id) }}" class="btn btn-primary">✓ Mark done</a>
+            <a href="{{ url_for('projects_page') }}" class="btn btn-ghost">Open project</a>
+
+            {% elif pick.kind == 'book' %}
+            <a href="{{ url_for('set_reading', id=pick.book_id) }}" class="btn btn-primary">📖 Start reading</a>
+            <a href="{{ url_for('library_page', tab='books') }}" class="btn btn-ghost">View library</a>
+
+            {% elif pick.kind == 'movie' %}
+            <a href="{{ url_for('library_page', tab='movies') }}" class="btn btn-primary">🎬 Open</a>
+
+            {% elif pick.kind == 'boardgame' %}
+            <a href="{{ url_for('log_boardgame_play', id=pick.boardgame_id) }}" class="btn btn-primary">+ Log a play</a>
+            <a href="{{ url_for('library_page', tab='boardgames') }}" class="btn btn-ghost">View collection</a>
+            {% endif %}
+        </div>
+    </div>
+    {% else %}
+    <div class="empty-spin">
+        <div class="icon">🪹</div>
+        <p>Nothing to pick from in <strong>{{ category }}</strong> yet.</p>
+        <p style="margin-top: 8px; font-size: 0.85em;">Add some entries and try again.</p>
+        <a href="{{ url_for('spin_page') }}" class="btn btn-ghost" style="margin-top: 16px;">← Back to spin</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

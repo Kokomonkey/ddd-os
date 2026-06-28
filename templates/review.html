@@ -1,0 +1,335 @@
+{% extends 'base.html' %}
+{% block title %}Weekly Review{% endblock %}
+
+{% block head %}
+<style>
+.review-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+.week-nav { display: flex; gap: 6px; align-items: center; }
+
+.summary-strip {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px;
+    margin-bottom: 24px;
+}
+.summary-tile {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 16px 18px;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-sm);
+    border-top: 4px solid var(--accent, var(--primary));
+}
+.summary-tile .num {
+    font-size: 1.8em;
+    font-weight: 700;
+    color: var(--primary-dark);
+    line-height: 1.1;
+}
+.summary-tile .lbl {
+    font-size: 0.7em;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+    font-weight: 600;
+    margin-top: 4px;
+}
+.summary-tile .sub {
+    font-size: 0.78em;
+    color: var(--text-muted);
+    margin-top: 6px;
+}
+
+.review-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 18px;
+    margin-bottom: 22px;
+}
+@media (max-width: 980px) { .review-grid { grid-template-columns: 1fr; } }
+
+.review-card {
+    background: var(--card-bg);
+    border-radius: 14px;
+    padding: 22px;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-sm);
+}
+.review-card h3 { font-size: 1.05em; margin-bottom: 14px; color: var(--primary-dark); }
+.review-card h3 .pill {
+    background: var(--bg-alt);
+    color: var(--text-muted);
+    font-size: 0.62em;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 10px;
+    margin-left: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.wins-list { display: flex; flex-direction: column; gap: 10px; }
+.win-group {
+    background: var(--card-warm);
+    border-radius: 10px;
+    padding: 10px 14px;
+    border-left: 4px solid var(--green);
+}
+.win-group .pname { font-weight: 700; font-size: 0.92em; margin-bottom: 4px; }
+.win-group .wlist { font-size: 0.85em; color: var(--text-muted); line-height: 1.6; }
+
+.time-bars { display: flex; flex-direction: column; gap: 10px; }
+.time-bar { display: grid; grid-template-columns: 130px 1fr 70px; gap: 10px; align-items: center; }
+.time-bar .name { font-size: 0.85em; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.time-bar .track { background: var(--bg-alt); border-radius: 6px; height: 14px; position: relative; overflow: hidden; }
+.time-bar .fill {
+    background: linear-gradient(90deg, var(--primary), var(--primary-dark));
+    height: 100%;
+    border-radius: 6px;
+    transition: width 0.4s ease;
+}
+.time-bar .mins { font-size: 0.78em; color: var(--text-muted); text-align: right; }
+
+.stalled-list { display: flex; flex-direction: column; gap: 8px; }
+.stalled-item {
+    background: #fff5f0;
+    border-left: 4px solid var(--orange);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 0.88em;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.stalled-item .icon { font-size: 1.2em; }
+.stalled-item .meta { color: var(--text-muted); font-size: 0.78em; margin-left: auto; }
+
+.trend-row {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 6px;
+}
+.trend-col {
+    background: var(--bg-alt);
+    border-radius: 8px;
+    padding: 10px 4px;
+    text-align: center;
+    position: relative;
+    min-height: 84px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+}
+.trend-col .day { font-size: 0.72em; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; font-weight: 600; }
+.trend-col .bar-pair { display: flex; gap: 3px; justify-content: center; align-items: flex-end; height: 50px; margin-top: 4px; }
+.trend-col .b { width: 10px; border-radius: 3px 3px 0 0; }
+.trend-col .b.mood { background: linear-gradient(180deg, #d4a373, #9c6644); }
+.trend-col .b.energy { background: linear-gradient(180deg, #7a9b76, #5d7559); }
+.trend-col .nums { font-size: 0.68em; color: var(--text-muted); margin-top: 4px; }
+.trend-col.today { background: #fef9c3; border: 1px solid var(--yellow); }
+
+.media-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
+.mini-media {
+    background: var(--bg-alt);
+    border-radius: 8px;
+    padding: 10px;
+    font-size: 0.82em;
+    text-align: center;
+}
+.mini-media img { width: 100%; aspect-ratio: 2/3; object-fit: cover; border-radius: 6px; margin-bottom: 6px; }
+.mini-media .nm { font-weight: 600; line-height: 1.3; }
+
+.empty-mini {
+    text-align: center;
+    padding: 16px;
+    color: var(--text-muted);
+    font-style: italic;
+    font-size: 0.88em;
+}
+
+.legend { display: flex; gap: 14px; font-size: 0.75em; color: var(--text-muted); margin-top: 10px; justify-content: center; }
+.legend span { display: flex; align-items: center; gap: 5px; }
+.legend .sq { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>📊 Weekly Review</h1>
+        <p>{{ start.strftime('%b %d') }} — {{ end.strftime('%b %d, %Y') }}
+           {% if week_offset == 0 %}<strong>(this week)</strong>
+           {% elif week_offset == -1 %}<em>(last week)</em>
+           {% elif week_offset < 0 %}<em>({{ -week_offset }} weeks ago)</em>
+           {% else %}<em>({{ week_offset }} weeks ahead)</em>{% endif %}
+        </p>
+    </div>
+    <div class="week-nav">
+        <a href="{{ url_for('review_page', w=prev_offset) }}" class="btn btn-ghost btn-sm">← Previous</a>
+        {% if week_offset != 0 %}
+        <a href="{{ url_for('review_page') }}" class="btn btn-ghost btn-sm">This week</a>
+        {% endif %}
+        <a href="{{ url_for('review_page', w=next_offset) }}" class="btn btn-ghost btn-sm">Next →</a>
+    </div>
+</div>
+
+{# Summary strip #}
+<div class="summary-strip">
+    <div class="summary-tile" style="--accent: #7a9b76;">
+        <div class="num">{{ wins|length }}</div>
+        <div class="lbl">Tasks done</div>
+        <div class="sub">across {{ wins_by_project|length }} project{{ '' if wins_by_project|length == 1 else 's' }}</div>
+    </div>
+    <div class="summary-tile" style="--accent: #d4a373;">
+        <div class="num">{{ (total_minutes / 60)|round(1) }}h</div>
+        <div class="lbl">Time tracked</div>
+        <div class="sub">{{ total_minutes }} minutes</div>
+    </div>
+    <div class="summary-tile" style="--accent: #e08e3c;">
+        <div class="num">{{ stalled|length }}</div>
+        <div class="lbl">Stalled</div>
+        <div class="sub">no progress this week</div>
+    </div>
+    <div class="summary-tile" style="--accent: #6b8e9e;">
+        <div class="num">{{ mood_avg or '—' }}{% if mood_avg %}<span style="font-size:0.5em;color:var(--text-muted);"> / 5</span>{% endif %}</div>
+        <div class="lbl">Mood avg</div>
+        <div class="sub">energy: {{ energy_avg or '—' }}{% if energy_avg %} / 5{% endif %}</div>
+    </div>
+    <div class="summary-tile" style="--accent: #e6b85a;">
+        <div class="num">{{ rewards|length }}</div>
+        <div class="lbl">Rewards claimed</div>
+        <div class="sub">🎁 fun unlocked</div>
+    </div>
+</div>
+
+<div class="review-grid">
+    {# LEFT — wins + time #}
+    <div>
+        <div class="review-card" style="margin-bottom: 18px;">
+            <h3>🏆 Wins <span class="pill">{{ wins|length }} done</span></h3>
+            {% if wins_by_project %}
+            <div class="wins-list">
+                {% for entry in wins_by_project.values() %}
+                <div class="win-group">
+                    <div class="pname">{{ entry.project.icon }} {{ entry.project.name }}</div>
+                    <div class="wlist">
+                        {% for t in entry.tasks %}
+                        ✓ {{ t.title }}<br>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-mini">No tasks completed this week yet. Mark something done!</div>
+            {% endif %}
+        </div>
+
+        <div class="review-card">
+            <h3>⏱️ Time per project</h3>
+            {% if time_per_project %}
+            {% set max_mins = time_per_project[0].minutes %}
+            <div class="time-bars">
+                {% for x in time_per_project %}
+                <div class="time-bar">
+                    <div class="name">{{ x.project.icon }} {{ x.project.name }}</div>
+                    <div class="track">
+                        <div class="fill" style="width: {{ (x.minutes / max_mins * 100)|round|int }}%;"></div>
+                    </div>
+                    <div class="mins">{{ (x.minutes / 60)|round(1) }}h · {{ x.task_count }}</div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-mini">No tracked time yet this week.</div>
+            {% endif %}
+        </div>
+    </div>
+
+    {# RIGHT — mood + stalled + media #}
+    <div>
+        <div class="review-card" style="margin-bottom: 18px;">
+            <h3>📈 Mood & energy</h3>
+            <div class="trend-row">
+                {% for d in day_trends %}
+                <div class="trend-col {% if d.date == today %}today{% endif %}">
+                    <div class="day">{{ d.label }}</div>
+                    <div class="bar-pair">
+                        <div class="b mood" style="height: {{ (d.mood or 0) * 10 }}px;"></div>
+                        <div class="b energy" style="height: {{ (d.energy or 0) * 10 }}px;"></div>
+                    </div>
+                    <div class="nums">
+                        {% if d.mood or d.energy %}
+                            {{ d.mood or '—' }}/{{ d.energy or '—' }}
+                        {% else %}—{% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="legend">
+                <span><span class="sq" style="background: #9c6644;"></span> Mood</span>
+                <span><span class="sq" style="background: #5d7559;"></span> Energy</span>
+            </div>
+        </div>
+
+        <div class="review-card" style="margin-bottom: 18px;">
+            <h3>⏸️ Stalled <span class="pill">{{ stalled|length }}</span></h3>
+            {% if stalled %}
+            <div class="stalled-list">
+                {% for p in stalled[:6] %}
+                {% set pinfo = priority_info.get(p.priority, priority_info['want']) %}
+                <div class="stalled-item">
+                    <span class="icon">{{ p.icon }}</span>
+                    <div>
+                        <div>{{ p.name }}</div>
+                        <div style="font-size: 0.72em; color: var(--text-muted);">{{ pinfo.icon }} {{ pinfo.label }}</div>
+                    </div>
+                    <span class="meta">{{ p.computed_percent }}%</span>
+                </div>
+                {% endfor %}
+                {% if stalled|length > 6 %}
+                <div style="text-align: center; font-size: 0.8em; color: var(--text-muted);">+ {{ stalled|length - 6 }} more stalled</div>
+                {% endif %}
+            </div>
+            {% else %}
+            <div class="empty-mini">Everything's moving — nice.</div>
+            {% endif %}
+        </div>
+
+        <div class="review-card">
+            <h3>🎬 Media consumed</h3>
+            {% if movies_watched or boardgame_plays or reading_now or watching_now %}
+            {% if reading_now %}
+            <div style="font-size: 0.88em; margin-bottom: 6px;">
+                📖 Currently reading: <strong>{{ reading_now.title }}</strong> ({{ reading_now.pages_read }}/{{ reading_now.total_pages }} pages)
+            </div>
+            {% endif %}
+            {% if watching_now %}
+            <div style="font-size: 0.88em; margin-bottom: 6px;">
+                📺 Currently watching: <strong>{{ watching_now.title }}</strong> (ep {{ watching_now.episodes_watched }})
+            </div>
+            {% endif %}
+            {% if movies_watched %}
+            <div style="font-size: 0.88em; margin: 10px 0 4px; font-weight: 600;">🎬 Movies watched:</div>
+            <div style="font-size: 0.82em; color: var(--text-muted);">
+                {% for m in movies_watched %}• {{ m.title }} ({{ m.year or '—' }}){% if not loop.last %}<br>{% endif %}{% endfor %}
+            </div>
+            {% endif %}
+            {% if boardgame_plays %}
+            <div style="font-size: 0.88em; margin: 10px 0 4px; font-weight: 600;">🎲 Games played:</div>
+            <div style="font-size: 0.82em; color: var(--text-muted);">
+                {% for g in boardgame_plays %}• {{ g.title }}{% if not loop.last %}<br>{% endif %}{% endfor %}
+            </div>
+            {% endif %}
+            {% else %}
+            <div class="empty-mini">Nothing logged — read a book or watch a film and log it.</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

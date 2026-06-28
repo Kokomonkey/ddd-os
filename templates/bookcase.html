@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bookcase — DDD OS</title>
+<style>
+:root {
+    --wood-light: #6b4226;
+    --wood-dark: #2d1808;
+    --wood-mid: #4a2d18;
+    --gold: #f4d8a8;
+    --gold-bright: #ffd97a;
+    --parchment: #f5e8d0;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+    background:
+        radial-gradient(ellipse at top, #3d2f25 0%, #1a1108 100%);
+    font-family: Georgia, 'Garamond', serif;
+    color: var(--parchment);
+    min-height: 100vh;
+    padding: 0;
+    overflow-x: hidden;
+}
+
+.bookcase-header {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    background: linear-gradient(180deg, rgba(26,17,8,0.95) 0%, rgba(26,17,8,0.7) 80%, transparent 100%);
+    padding: 18px 28px 30px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    backdrop-filter: blur(8px);
+}
+.bookcase-title {
+    color: var(--gold);
+    font-size: 1.3em;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.6);
+}
+.bookcase-stats {
+    color: #c9a87a;
+    font-size: 0.95em;
+    font-style: italic;
+}
+.back-btn {
+    color: var(--parchment);
+    text-decoration: none;
+    padding: 8px 16px;
+    border: 1px solid var(--gold);
+    border-radius: 8px;
+    font-size: 0.85em;
+    font-family: Georgia, serif;
+    transition: all 0.2s;
+    background: rgba(0,0,0,0.3);
+}
+.back-btn:hover { background: var(--gold); color: var(--wood-dark); }
+
+.bookcase-room {
+    padding: 100px 40px 60px;
+    max-width: 1600px;
+    margin: 0 auto;
+}
+
+.huge-bookcase {
+    background:
+        repeating-linear-gradient(90deg,
+            rgba(0,0,0,0.08) 0px, transparent 1px,
+            transparent 60px, rgba(0,0,0,0.08) 61px),
+        repeating-linear-gradient(180deg,
+            rgba(255,255,255,0.02) 0px, transparent 2px,
+            transparent 200px, rgba(255,255,255,0.02) 202px),
+        linear-gradient(180deg, #6b4226 0%, #4a2d18 50%, #3a200f 100%);
+    border-radius: 20px;
+    padding: 30px 30px 14px;
+    box-shadow:
+        0 30px 80px rgba(0,0,0,0.6),
+        inset 0 0 60px rgba(0,0,0,0.3),
+        inset 0 4px 0 rgba(255,255,255,0.05);
+    border: 6px solid #2d1808;
+    position: relative;
+}
+.huge-bookcase::before, .huge-bookcase::after {
+    /* Side trim — like the wooden frame of a real bookcase */
+    content: '';
+    position: absolute;
+    top: 0; bottom: 0;
+    width: 14px;
+    background: linear-gradient(90deg, #1a1108, #4a2d18);
+    border-radius: 6px;
+}
+.huge-bookcase::before { left: -2px; }
+.huge-bookcase::after { right: -2px; transform: scaleX(-1); }
+
+.series-section { margin-bottom: 28px; }
+.series-label {
+    color: var(--gold-bright);
+    font-size: 1em;
+    font-style: italic;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    margin-bottom: 8px;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.7);
+    border-bottom: 2px solid rgba(244,216,168,0.25);
+    display: inline-block;
+    min-width: 200px;
+}
+.subseries-label {
+    color: #c9a87a;
+    font-size: 0.78em;
+    padding: 8px 10px 4px;
+    opacity: 0.9;
+    text-transform: uppercase;
+    letter-spacing: 2.5px;
+}
+.shelf {
+    background: linear-gradient(180deg, transparent 90%, #2d1808 90%, #1a1108 100%);
+    padding: 0 10px;
+    display: flex;
+    align-items: flex-end;
+    gap: 3px;
+    min-height: 200px;
+    margin-bottom: 6px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    position: relative;
+    scrollbar-width: thin;
+    scrollbar-color: #6b4226 #2d1808;
+}
+.shelf::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 12px;
+    background: linear-gradient(180deg, #5a371f, #1a1108);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.7);
+}
+
+.book-spine {
+    position: relative;
+    cursor: pointer;
+    flex-shrink: 0;
+    border-radius: 3px 3px 0 0;
+    box-shadow:
+        inset -4px 0 6px rgba(0,0,0,0.3),
+        inset 4px 0 4px rgba(255,255,255,0.15),
+        -2px 3px 6px rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.3s cubic-bezier(.34,1.56,.64,1);
+    background: var(--spine-color, #8b5a3c);
+    animation: bookSlideIn 0.8s ease-out both;
+    animation-delay: var(--delay, 0s);
+    opacity: 0;
+    margin-bottom: 12px;
+}
+.book-spine:hover { transform: translateY(-14px) rotate(-1.5deg); z-index: 5; }
+.book-spine::before, .book-spine::after {
+    content: '';
+    position: absolute;
+    left: 4px; right: 4px;
+    height: 1.5px;
+    background: rgba(255, 215, 130, 0.4);
+}
+.book-spine::before { top: 6px; }
+.book-spine::after { bottom: 6px; }
+.spine-title {
+    color: var(--parchment);
+    font-size: 0.85em;
+    font-weight: 600;
+    font-family: Georgia, serif;
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    transform: rotate(180deg);
+    padding: 14px 0;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.7);
+    letter-spacing: 1px;
+}
+.book-spine.reading {
+    background: linear-gradient(180deg, var(--spine-color) 0%, #d4a373 60%, var(--gold-bright) 100%);
+    animation: bookSlideIn 0.8s ease-out both, readingGlow 2.5s ease-in-out infinite;
+    animation-delay: var(--delay, 0s), 0.8s;
+}
+.book-spine.finished {
+    background: linear-gradient(135deg, #8b5a3c, var(--spine-color) 40%, #b89968);
+}
+.book-spine.finished::before, .book-spine.finished::after {
+    background: linear-gradient(90deg, var(--gold-bright), #d4a060, var(--gold-bright));
+    height: 2.5px;
+    box-shadow: 0 0 6px rgba(255, 217, 122, 0.6);
+}
+.book-spine.finished .spine-title { color: #fff5d6; font-weight: 700; }
+.book-spine.unread { opacity: 0.5; filter: grayscale(0.4); }
+
+@keyframes bookSlideIn {
+    from { transform: translateY(-150px) rotate(-10deg); opacity: 0; }
+    to { transform: translateY(0) rotate(0); opacity: 1; }
+}
+@keyframes readingGlow {
+    0%, 100% { box-shadow: inset -4px 0 6px rgba(0,0,0,0.3), inset 4px 0 4px rgba(255,255,255,0.15), -2px 3px 6px rgba(0,0,0,0.5), 0 0 18px rgba(255, 217, 122, 0.5); }
+    50%      { box-shadow: inset -4px 0 6px rgba(0,0,0,0.3), inset 4px 0 4px rgba(255,255,255,0.15), -2px 3px 6px rgba(0,0,0,0.5), 0 0 32px rgba(255, 217, 122, 0.9); }
+}
+
+/* Modal styles (same pattern as library) */
+.book-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 8, 4, 0.85);
+    backdrop-filter: blur(8px);
+    z-index: 2000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+.book-modal-backdrop.open { display: flex; animation: fadeIn 0.2s; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.book-modal {
+    background: #fffaf2;
+    color: #3d2f25;
+    font-family: 'Segoe UI', sans-serif;
+    border-radius: 16px;
+    max-width: 500px;
+    width: 100%;
+    padding: 28px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+    animation: slideUp 0.25s ease-out;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+@keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+.book-modal .close-x {
+    float: right;
+    background: none; border: none;
+    font-size: 1.6em; cursor: pointer; color: #8a7a68;
+}
+.book-modal-cover { display: flex; gap: 18px; margin-bottom: 16px; }
+.book-modal-cover img { width: 110px; aspect-ratio: 2/3; object-fit: cover; border-radius: 8px; box-shadow: 0 4px 14px rgba(0,0,0,0.2); }
+.book-modal-cover h3 { color: #9c6644; margin-bottom: 4px; }
+.book-modal-cover .author { color: #8a7a68; margin-bottom: 6px; }
+.book-modal-cover .meta { font-size: 0.82em; color: #8a7a68; margin-bottom: 6px; }
+.book-modal-progress { margin: 16px 0; }
+.book-modal-progress progress { width: 100%; height: 10px; }
+.book-modal-form { display: flex; gap: 6px; margin-top: 12px; }
+.book-modal-form input { flex: 1; padding: 9px 12px; border: 1px solid #e8dcc9; border-radius: 8px; font-size: 0.92em; }
+.book-modal-actions { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+.modal-btn { padding: 8px 14px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 0.85em; }
+.modal-btn-primary { background: #d4a373; color: #3d2f25; border: none; cursor: pointer; }
+.modal-btn-ghost { background: transparent; color: #3d2f25; border: 1px solid #d6c4a8; }
+.modal-btn-link { background: transparent; color: #8a7a68; padding: 4px 8px; }
+
+@media (max-width: 768px) {
+    .bookcase-room { padding: 100px 14px 40px; }
+    .huge-bookcase { padding: 18px 14px 8px; }
+    .series-label { font-size: 0.82em; letter-spacing: 2px; }
+}
+</style>
+</head>
+<body>
+
+<div class="bookcase-header">
+    <a href="/library/books" class="back-btn">← Back to Library</a>
+    <div class="bookcase-title">📚 My Bookcase</div>
+    <div class="bookcase-stats">
+        {{ finished_books }} read · {{ reading_count }} active · {{ total_books }} total
+    </div>
+</div>
+
+<div class="bookcase-room">
+    <div class="huge-bookcase">
+        {% set series_palette = {
+            'Discworld': ['#8b3a3a', '#6b4226', '#3d5a47', '#5c3a5e', '#4a5d7a', '#7d6b3a', '#6b2e2e', '#3a5a5a', '#7a4a2e', '#5a4a7a'],
+            'Unsorted':  ['#8b5a3c', '#6b4226', '#7a5a8a', '#5a7a8a', '#9b6b3c', '#7b8b5a', '#8a4a4a']
+        } %}
+
+        {% for series_name, sub_groups in shelves.items() %}
+        <div class="series-section">
+            <div class="series-label">{{ series_name }}</div>
+            {% for sub_name, books in sub_groups.items() %}
+            {% if sub_name and sub_name != '—' %}
+            <div class="subseries-label">— {{ sub_name }}</div>
+            {% endif %}
+            <div class="shelf">
+                {% for b in books %}
+                {% set spine_width = (22 + (b.total_pages // 40)) %}
+                {% set spine_width = [spine_width, 56]|min %}
+                {% set spine_height = (135 + (b.total_pages // 9)) %}
+                {% set spine_height = [spine_height, 195]|min %}
+                {% set palette = series_palette.get(series_name, series_palette['Unsorted']) %}
+                {% set color = palette[loop.index0 % palette|length] %}
+                <div class="book-spine
+                            {% if b.is_reading %}reading{% elif b.is_finished %}finished{% elif b.pages_read == 0 %}unread{% endif %}"
+                     style="width: {{ spine_width }}px; height: {{ spine_height }}px;
+                            --spine-color: {{ color }};
+                            --delay: {{ loop.index0 * 0.03 }}s;"
+                     onclick="openBookModal({{ b.id }})"
+                     title="{{ b.title }} ({{ b.year or '—' }})">
+                    <span class="spine-title">{{ b.title }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% endfor %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="book-modal-backdrop" id="bookModalBackdrop" onclick="if(event.target===this) closeBookModal()">
+    <div class="book-modal">
+        <button class="close-x" onclick="closeBookModal()">×</button>
+        <div id="bookModalBody"></div>
+    </div>
+</div>
+
+<script id="bookData" type="application/json">
+{
+  {% set ns = namespace(first=true) %}
+  {% for series_name, sub_groups in shelves.items() %}
+    {% for sub_name, books in sub_groups.items() %}
+      {% for b in books %}
+        {% if not ns.first %},{% endif %}{% set ns.first = false %}
+        "{{ b.id }}": {
+          "id": {{ b.id }},
+          "title": {{ b.title|tojson }},
+          "author": {{ b.author|tojson }},
+          "series": {{ (b.series or '')|tojson }},
+          "subseries": {{ (b.subseries or '')|tojson }},
+          "year": {{ b.year or 0 }},
+          "publisher": {{ (b.publisher or '')|tojson }},
+          "isbn": {{ (b.isbn or '')|tojson }},
+          "cover_url": {{ (b.cover_url or '')|tojson }},
+          "pages_read": {{ b.pages_read }},
+          "total_pages": {{ b.total_pages }},
+          "progress_pct": {{ b.progress_pct }},
+          "is_reading": {{ b.is_reading|tojson }},
+          "is_finished": {{ b.is_finished|tojson }}
+        }
+      {% endfor %}
+    {% endfor %}
+  {% endfor %}
+}
+</script>
+
+<script>
+const BOOK_DATA = JSON.parse(document.getElementById('bookData').textContent);
+function openBookModal(id) {
+    const b = BOOK_DATA[id];
+    if (!b) return;
+    const cover = b.cover_url
+        ? `<img src="${b.cover_url}" alt="" onerror="this.style.display='none'">`
+        : `<div style="width:110px;aspect-ratio:2/3;background:#f3e3c8;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:2.5em;">📖</div>`;
+    const meta = [];
+    if (b.year) meta.push(b.year);
+    if (b.publisher) meta.push(b.publisher + ' edition');
+    if (b.isbn) meta.push('ISBN ' + b.isbn);
+    const subline = b.series ? `${b.series}${b.subseries && b.subseries !== '—' ? ' · ' + b.subseries : ''}` : '';
+    document.getElementById('bookModalBody').innerHTML = `
+        <div class="book-modal-cover">
+            ${cover}
+            <div>
+                <h3>${b.title}</h3>
+                <div class="author">${b.author || ''}</div>
+                ${subline ? `<div class="meta">${subline}</div>` : ''}
+                <div class="meta">${meta.join(' · ')}</div>
+            </div>
+        </div>
+        <div class="book-modal-progress">
+            <progress value="${b.pages_read}" max="${b.total_pages}"></progress>
+            <div style="font-size:0.85em;color:#8a7a68;margin-top:4px;">
+                ${b.pages_read} / ${b.total_pages} pages · ${b.progress_pct}%
+                ${b.is_finished ? ' · ✓ Finished' : b.is_reading ? ' · 📖 Reading now' : ''}
+            </div>
+        </div>
+        <form method="POST" action="/update_progress/${b.id}" class="book-modal-form">
+            <input type="number" name="pages_read" value="${b.pages_read}" min="0" max="${b.total_pages}">
+            <button class="modal-btn modal-btn-primary" type="submit">Update progress</button>
+        </form>
+        <div class="book-modal-actions">
+            ${!b.is_reading ? `<a href="/set_reading/${b.id}" class="modal-btn modal-btn-ghost">📖 Set as currently reading</a>` : ''}
+            <a href="/delete_book/${b.id}" class="modal-btn modal-btn-link"
+               onclick="return confirm('Remove this book?')">Remove</a>
+        </div>
+    `;
+    document.getElementById('bookModalBackdrop').classList.add('open');
+}
+function closeBookModal() {
+    document.getElementById('bookModalBackdrop').classList.remove('open');
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeBookModal(); });
+</script>
+
+</body>
+</html>

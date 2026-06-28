@@ -12,26 +12,46 @@
     <title>{% block title %}DDD OS{% endblock %} — DouweDoesDesign</title>
     <style>
         :root {
-            --bg: #f0f3f7;
-            --sidebar-bg: #16213e;
-            --sidebar-text: #8892b0;
-            --sidebar-hover: #1e2d50;
-            --card-bg: #ffffff;
-            --text: #2d3436;
-            --text-muted: #636e72;
-            --border: #dfe6e9;
-            --blue: #0984e3;
-            --red: #e53e3e;
-            --green: #38a169;
-            --orange: #dd6b20;
-            --yellow: #d69e2e;
+            /* Cozy / warm palette */
+            --bg: #faf4ec;
+            --bg-alt: #f3e9d8;
+            --sidebar-bg: #3d2f25;
+            --sidebar-text: #c9b8a4;
+            --sidebar-hover: #4d3c30;
+            --sidebar-active-bg: #d4a373;
+            --card-bg: #fffaf2;
+            --card-warm: #fbf1e1;
+            --text: #3d2f25;
+            --text-muted: #8a7a68;
+            --border: #e8dcc9;
+            --border-strong: #d6c4a8;
+            /* Accent colors */
+            --blue: #6b8e9e;       /* dusty teal */
+            --red: #c1432e;        /* terracotta */
+            --green: #7a9b76;      /* sage */
+            --orange: #e08e3c;     /* amber */
+            --yellow: #e6b85a;     /* honey */
+            --primary: #d4a373;    /* warm sand */
+            --primary-dark: #9c6644;
+            /* Priority colors */
+            --p-must: #c1432e;
+            --p-have: #e08e3c;
+            --p-want: #d4a373;
+            --p-fun:  #7a9b76;
+            /* Shadows */
+            --shadow-sm: 0 1px 3px rgba(61, 47, 37, 0.08);
+            --shadow-md: 0 4px 14px rgba(61, 47, 37, 0.1);
+            --shadow-lg: 0 10px 28px rgba(61, 47, 37, 0.14);
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: var(--bg);
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+            background:
+                radial-gradient(circle at 10% 0%, #fdf2dd 0%, transparent 50%),
+                radial-gradient(circle at 90% 100%, #f3e3c8 0%, transparent 55%),
+                var(--bg);
             color: var(--text);
             display: flex;
             height: 100vh;
@@ -91,8 +111,18 @@
             transition: all 0.15s;
         }
 
-        .nav-item:hover { background: var(--sidebar-hover); color: #ccd6f6; }
-        .nav-item.active { background: var(--blue); color: #ffffff; }
+        .nav-item:hover { background: var(--sidebar-hover); color: #f5e6d0; }
+        .nav-item.active { background: var(--sidebar-active-bg); color: #3d2f25; font-weight: 600; }
+
+        .nav-pillar {
+            font-size: 0.95em;
+            font-weight: 600;
+            padding: 10px 12px;
+            border-radius: 8px;
+            color: #e8d5b8;
+            margin-top: 4px;
+        }
+        .nav-pillar.active { background: var(--sidebar-active-bg); color: #3d2f25; }
 
         /* Main content */
         .main-content {
@@ -117,16 +147,18 @@
         /* Cards */
         .card {
             background: var(--card-bg);
-            border-radius: 12px;
-            padding: 20px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            border-radius: 14px;
+            padding: 22px;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border);
         }
+        .card-warm { background: var(--card-warm); }
 
         /* Buttons */
         .btn {
-            padding: 8px 16px;
+            padding: 9px 18px;
             border: none;
-            border-radius: 7px;
+            border-radius: 9px;
             cursor: pointer;
             font-weight: 600;
             font-size: 0.875em;
@@ -134,16 +166,20 @@
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            transition: opacity 0.15s;
+            transition: all 0.15s ease;
         }
 
-        .btn:hover { opacity: 0.85; }
-        .btn-primary { background: var(--blue); color: white; }
-        .btn-dark { background: var(--text); color: white; }
-        .btn-ghost { background: transparent; border: 1px solid var(--border); color: var(--text); }
+        .btn:hover { transform: translateY(-1px); box-shadow: var(--shadow-md); }
+        .btn-primary { background: var(--primary); color: #3d2f25; }
+        .btn-primary:hover { background: var(--primary-dark); color: #fff; }
+        .btn-dark { background: var(--text); color: #faf4ec; }
+        .btn-ghost { background: transparent; border: 1px solid var(--border-strong); color: var(--text); }
+        .btn-ghost:hover { background: var(--bg-alt); }
         .btn-success { background: var(--green); color: white; }
         .btn-danger { background: var(--red); color: white; }
-        .btn-sm { padding: 4px 10px; font-size: 0.78em; }
+        .btn-sm { padding: 5px 12px; font-size: 0.78em; }
+        .btn-link { background: transparent; color: var(--text-muted); padding: 4px 8px; }
+        .btn-link:hover { color: var(--primary-dark); transform: none; box-shadow: none; }
 
         /* Search form */
         .search-form { display: flex; gap: 8px; }
@@ -413,27 +449,29 @@
 <div class="sidebar">
     <div class="sidebar-logo">
         DDD OS
-        <span>DouweDoesDesign</span>
+        <span>Projects & Progress</span>
     </div>
 
-    <a href="/" class="nav-item {% if active == 'calendar' %}active{% endif %}">📅 Calendar</a>
+    <div class="nav-section">Daily</div>
+    <a href="/today" class="nav-pillar {% if active == 'today' %}active{% endif %}">☀️ Today</a>
+
+    <div class="nav-section">Do</div>
+    <a href="/projects" class="nav-pillar {% if active == 'projects' %}active{% endif %}">🎯 Projects</a>
+
+    <div class="nav-section">Enjoy</div>
+    <a href="/library" class="nav-pillar {% if active == 'library' %}active{% endif %}">📚 Library</a>
+
+    <div class="nav-section">Reflect</div>
+    <a href="/review" class="nav-item {% if active == 'review' %}active{% endif %}">📊 Weekly Review</a>
+    <a href="/calendar" class="nav-item {% if active == 'calendar' %}active{% endif %}">📅 Calendar</a>
     <a href="/diary" class="nav-item {% if active == 'diary' %}active{% endif %}">📓 Design Diary</a>
-
-    <div class="nav-section">Consume</div>
-    <a href="/media/books" class="nav-item {% if active == 'books' %}active{% endif %}">📚 Books</a>
-    <a href="/media/manga" class="nav-item {% if active == 'manga' %}active{% endif %}">📖 Manga</a>
-    <a href="/media/anime" class="nav-item {% if active == 'anime' %}active{% endif %}">🎬 Anime</a>
-
-    <div class="nav-section">Grow</div>
-    <a href="/skills" class="nav-item {% if active == 'skills' %}active{% endif %}">🎯 Skills</a>
     <a href="/habits" class="nav-item {% if active == 'habits' %}active{% endif %}">✅ Habits</a>
-
-    <div class="nav-section">Brand</div>
-    <a href="/presentation" class="nav-item {% if active == 'presentation' %}active{% endif %}">✨ DouweDoesDesign</a>
+    <a href="/skills" class="nav-item {% if active == 'skills' %}active{% endif %}">🎯 Skills</a>
+    <a href="/stats" class="nav-item {% if active == 'stats' %}active{% endif %}">📈 Stats</a>
 
     <div class="nav-section">Extras</div>
     <a href="/spin" class="nav-item {% if active == 'spin' %}active{% endif %}">🎲 Spin</a>
-    <a href="/stats" class="nav-item {% if active == 'stats' %}active{% endif %}">📊 Stats</a>
+    <a href="/presentation" class="nav-item {% if active == 'presentation' %}active{% endif %}">✨ Brand</a>
 </div>
 
 <div class="main-content">
